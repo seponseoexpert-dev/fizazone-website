@@ -40,6 +40,7 @@ import {
   uniqueSlug,
   uploadImages,
 } from "@/lib/admin-products";
+import { resolveImage } from "@/lib/catalog";
 import { fetchProductMap, upsertProductMap } from "@/lib/localization";
 import {
   COUNTRY_TABS,
@@ -418,7 +419,8 @@ export default function AdminProductsPage() {
               <ul className="divide-y divide-border lg:hidden">
                 {filtered.map((p) => {
                   const stock = (p.product_variants ?? []).reduce((s, v) => s + v.stock_qty, 0);
-                  const thumb = p.images[0] ? urls[p.images[0]] : undefined;
+                  const rawImg = p.images?.[0];
+                  const thumb = rawImg ? (urls[rawImg] || resolveImage(rawImg, p.id)) : undefined;
                   return (
                     <li key={p.id} className="flex gap-3 p-4">
                       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -481,7 +483,8 @@ export default function AdminProductsPage() {
                   <tbody>
                     {filtered.map((p) => {
                       const stock = (p.product_variants ?? []).reduce((s, v) => s + v.stock_qty, 0);
-                      const thumb = p.images[0] ? urls[p.images[0]] : undefined;
+                      const rawImg = p.images?.[0];
+                      const thumb = rawImg ? (urls[rawImg] || resolveImage(rawImg, p.id)) : undefined;
                       return (
                         <tr
                           key={p.id}

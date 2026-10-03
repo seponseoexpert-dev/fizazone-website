@@ -25,6 +25,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { isAdmin, signedUrls } from "@/lib/admin-products";
+import { resolveImage } from "@/lib/catalog";
 import { COUNTRY_OPTIONS, fetchMyAdminRole } from "@/lib/content";
 
 type OrderRow = {
@@ -422,7 +423,7 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
                 {products.slice(0, 8).map((p) => {
                   const raw = p.images?.[0] ?? "";
-                  const src = raw?.startsWith("http") ? raw : urls[raw];
+                  const src = raw ? (urls[raw] || resolveImage(raw, p.id)) : "";
                   return (
                     <article key={p.id} className="overflow-hidden rounded-xl border border-border">
                       <div className="aspect-square bg-secondary">

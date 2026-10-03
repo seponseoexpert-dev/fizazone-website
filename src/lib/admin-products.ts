@@ -184,13 +184,35 @@ export async function uploadImages(files: File[]): Promise<string[]> {
 
 /** The image bucket is private, so display URLs are signed on demand. */
 export async function signedUrls(paths: string[]): Promise<Record<string, string>> {
-  const clean = paths.filter((p) => p && !p.startsWith("http"));
-  if (!clean.length) return {};
-  const { data } = await supabase.storage.from(BUCKET).createSignedUrls(clean, 60 * 60);
   const map: Record<string, string> = {};
-  (data ?? []).forEach((row) => {
-    if (row.path && row.signedUrl) map[row.path] = row.signedUrl;
-  });
+  const storagePaths: string[] = [];
+
+  for (const p of paths) {
+    if (!p) continue;
+    if (p.startsWith("http") || p.startsWith("/")) {
+      map[p] = p;
+    } else {
+      storagePaths.push(p);
+    }
+  }
+
+  if (storagePaths.length) {
+    try {
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrls(storagePaths, 60 * 60);
+      (data ?? []).forEach((row) => {
+        if (row.path && row.signedUrl) map[row.path] = row.signedUrl;
+      });
+    } catch {
+      /* fallback */
+    }
+    for (const sp of storagePaths) {
+      if (!map[sp]) {
+        const { data } = supabase.storage.from(BUCKET).getPublicUrl(sp);
+        if (data?.publicUrl) map[sp] = data.publicUrl;
+      }
+    }
+  }
+
   return map;
 }
 
