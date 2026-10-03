@@ -20,6 +20,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+*.tsbuildinfo
 
 
 # Wrangler / Cloudflare
