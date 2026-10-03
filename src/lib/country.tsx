@@ -119,6 +119,18 @@ export function marketToSetting(m: Market): CountrySetting {
 }
 
 const STORAGE_KEY = "fiza-country";
+const COOKIE_NAME = "fiza_country";
+
+function syncCookie(val: string) {
+  if (typeof document === "undefined") return;
+  document.cookie = `${COOKIE_NAME}=${val}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
+function getStoredCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
 
 type CountryContextValue = {
   country: CountrySetting;
@@ -152,9 +164,12 @@ export function CountryProvider({ children }: { children: ReactNode }) {
   const markets = useMemo(() => (allMarkets ?? []).filter(isShoppable), [allMarkets]);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY) || getStoredCookie();
     const hasSaved = Boolean(saved);
-    if (saved) setCode(saved);
+    if (saved) {
+      setCode(saved);
+      syncCookie(saved);
+    }
 
     let cancelled = false;
 
@@ -165,6 +180,7 @@ export function CountryProvider({ children }: { children: ReactNode }) {
         setCode(next);
         try {
           localStorage.setItem(STORAGE_KEY, next);
+          syncCookie(next);
         } catch {
           /* ignore */
         }
@@ -207,6 +223,7 @@ export function CountryProvider({ children }: { children: ReactNode }) {
         setCode(next);
         try {
           localStorage.setItem(STORAGE_KEY, next);
+          syncCookie(next);
         } catch {
           /* ignore */
         }

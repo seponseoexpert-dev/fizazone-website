@@ -247,7 +247,7 @@ export function Header() {
       <div className="hidden lg:block">
         <div className="shop-container flex items-center justify-between gap-6 py-4">
           {/* Logo */}
-          <Link to="/" className="shrink-0 leading-none">
+          <Link to={`/${country.code || "bd"}`} className="shrink-0 leading-none">
             <span className="font-display text-3xl font-extrabold tracking-tight text-sale">
               Faiza
             </span>
@@ -289,7 +289,7 @@ export function Header() {
               {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </IconButton>
             <Link
-              to="/track-order"
+              to={`/${country.code || "bd"}/track-order`}
               aria-label="Track order"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:text-sale sm:h-11 sm:w-11"
             >
@@ -325,7 +325,7 @@ export function Header() {
 
 
             <Link
-              to="/cart"
+              to={`/${country.code || "bd"}/cart`}
               aria-label="Cart"
               className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:text-sale sm:h-11 sm:w-11"
             >
@@ -337,7 +337,7 @@ export function Header() {
               )}
             </Link>
             <Link
-              to="/account"
+              to={`/${country.code || "bd"}/account`}
               aria-label="Account"
               className="grid h-10 w-11 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:text-sale sm:h-11 sm:w-11"
             >
@@ -355,7 +355,7 @@ export function Header() {
             {megaTabs.map((tab) => (
               <Link
                 key={tab.label}
-                to="/categories"
+                to={`/${country.code || "bd"}/categories`}
                 search={{ category: tab.category }}
                 onMouseEnter={() => setOpenTab(tab.label)}
                 onFocus={() => setOpenTab(tab.label)}
@@ -381,7 +381,7 @@ export function Header() {
 
       {/* Mobile / tablet header */}
       <div className="shop-container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2.5 lg:hidden">
-        <Link to="/" className="min-w-0 leading-none">
+        <Link to={`/${country.code || "bd"}`} className="min-w-0 leading-none">
           <span className="font-display text-2xl font-extrabold tracking-tight text-sale">
             Faiza
           </span>
@@ -408,7 +408,7 @@ export function Header() {
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <Link
-            to="/track-order"
+            to={`/${country.code || "bd"}/track-order`}
             aria-label="Track order"
             className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-background text-foreground active:scale-95 transition-transform"
           >

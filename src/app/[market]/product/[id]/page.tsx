@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductView } from "@/components/shop/ProductView";
-import { fetchShopProducts } from "@/lib/catalog";
+import { fetchShopProducts, findProductByIdOrSlug } from "@/lib/catalog";
 import { getMarkets } from "@/lib/markets.functions";
 import { resolveMarket } from "@/lib/markets";
 import { richTextToPlain } from "@/lib/rich-text";
@@ -17,7 +17,7 @@ export async function generateMetadata({
       fetchShopProducts(marketParam),
       getMarkets(),
     ]);
-    const product = all.find((p) => p.id === id || p.slug === id);
+    const product = findProductByIdOrSlug(all, id);
     if (!product) {
       return { title: "Product unavailable — Faiza Zone", robots: { index: false } };
     }
@@ -61,7 +61,7 @@ export default async function MarketProductPage({
     fetchShopProducts(marketParam),
     getMarkets(),
   ]);
-  const product = all.find((p) => p.id === id || p.slug === id);
+  const product = findProductByIdOrSlug(all, id);
   if (!product) {
     notFound();
   }

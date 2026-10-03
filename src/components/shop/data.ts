@@ -32,6 +32,11 @@ export type Product = {
   category?: string;
 };
 
+function withSlug(p: Product): Product {
+  const slug = p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return { ...p, slug };
+}
+
 export const trendy: Product[] = [
   { id: "t1", name: "Classic French Mens Hoodie", image: imgHoodieGrey, price: 150, rating: 4, category: "Men" },
   { id: "t2", name: "Team Red Hoodie", image: imgHoodieRed, price: 60, oldPrice: 120, rating: 5, reviews: 12, flash: true, category: "Women" },
@@ -41,14 +46,14 @@ export const trendy: Product[] = [
   { id: "t6", name: "Sportswear Club Tee", image: imgTeeWhite, price: 70, rating: 4, category: "T-shirt" },
   { id: "t7", name: "Denim Jacket", image: imgDenim, price: 120, oldPrice: 160, rating: 4, flash: true, category: "Men" },
   { id: "t8", name: "Utility Power Bag", image: imgBag, price: 135, oldPrice: 270, rating: 5, flash: true, category: "Bags" },
-];
+].map(withSlug);
 
 export const ethnic: Product[] = [
   { id: "e1", name: "Embroidered Kurti", image: imgTeeWhite, price: 95, oldPrice: 130, rating: 5, flash: true, category: "Kurti" },
   { id: "e2", name: "Cotton Casual Kurti", image: imgTeeWhite, price: 75, rating: 4, category: "Kurti" },
   { id: "e3", name: "Classic Cotton Panjabi", image: imgHoodieGrey, price: 110, oldPrice: 150, rating: 5, category: "Panjabi" },
   { id: "e4", name: "Festive Silk Panjabi", image: imgHoodieGrey, price: 180, rating: 4, category: "Panjabi" },
-];
+].map(withSlug);
 
 export const popular: Product[] = [
   { id: "p1", name: "Utility Power Bag", image: imgBag, price: 135, oldPrice: 270, rating: 4, flash: true, category: "Bags" },
@@ -59,7 +64,7 @@ export const popular: Product[] = [
   { id: "p6", name: "Phoenix Fleece", image: imgHoodieGrey, price: 100, rating: 4, category: "Men" },
   { id: "p7", name: "Unisex Bucket Hat", image: imgHat, price: 80, oldPrice: 100, rating: 4, category: "Boys" },
   { id: "p8", name: "Air Hoodie", image: imgHoodieGrey, price: 100, rating: 5, category: "Women" },
-];
+].map(withSlug);
 
 export const flashSale: Product[] = [
   { id: "f1", name: "Revolution 6 FlyEase", image: imgSneakers, price: 112, oldPrice: 140, rating: 4, flash: true, category: "Boys" },
@@ -70,7 +75,7 @@ export const flashSale: Product[] = [
   { id: "f6", name: "Utility Power Bag", image: imgBag, price: 135, oldPrice: 270, rating: 4, flash: true, category: "Bags" },
   { id: "f7", name: "Tech Fit Leggings", image: imgTeeBlack, price: 80, oldPrice: 100, rating: 4, flash: true, category: "Women" },
   { id: "f8", name: "Squad Big Kid Hoodie", image: imgHoodieRed, price: 80, oldPrice: 160, rating: 5, flash: true, category: "Boys" },
-];
+].map(withSlug);
 
 export const demoProducts: Product[] = [
   { id: "d1", name: "Oversized Fleece Hoodie", image: imgHoodieGrey, price: 145, oldPrice: 190, rating: 4, reviews: 34, flash: true, category: "Men" },
@@ -91,7 +96,7 @@ export const demoProducts: Product[] = [
   { id: "d16", name: "Summer Bucket Hat", image: imgHat, price: 35, oldPrice: 55, rating: 4, reviews: 8, flash: true, category: "Boys" },
   { id: "d17", name: "Classic Court Sneaker", image: imgSneakers, price: 150, rating: 5, reviews: 38, category: "Men" },
   { id: "d18", name: "Washed Denim Shirt", image: imgDenim, price: 115, oldPrice: 145, rating: 4, reviews: 17, flash: true, category: "Men" },
-];
+].map(withSlug);
 
 const seen = new Set<string>();
 export const allProducts: Product[] = [

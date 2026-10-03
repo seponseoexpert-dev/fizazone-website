@@ -1,6 +1,6 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Product } from "@/components/shop/data";
+import { allProducts, type Product } from "@/components/shop/data";
 import { getImageSrc } from "@/lib/utils";
 
 import hoodieGrey from "@/assets/p-hoodie-grey.jpg";
@@ -239,3 +239,66 @@ export function matchesCategory(product: ShopProduct, label: string) {
   if (["boys", "juniors", "kids"].includes(l) && c === "juniors") return true;
   return product.name.toLowerCase().includes(l);
 }
+
+/** Finds a product in the given list by DB UUID, slug, demo ID (t7, e1, etc.) or name. */
+export function findProductByIdOrSlug(
+  products: ShopProduct[],
+  idOrSlug: string,
+): ShopProduct | null {
+  const clean = (idOrSlug ?? "").trim().toLowerCase();
+  if (!clean) return null;
+
+  // 1. Direct match in DB products by id or slug
+  const direct = products.find(
+    (p) => p.id.toLowerCase() === clean || (p.slug && p.slug.toLowerCase() === clean),
+  );
+  if (direct) return direct;
+
+  // 2. Check mock products in data.ts (handles legacy IDs like t7, e1, etc.)
+  const mock = allProducts.find((p) => {
+    const slug = (p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+    return p.id.toLowerCase() === clean || slug === clean;
+  });
+
+  if (mock) {
+    const mockSlug = (mock.slug || mock.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+    const matchedInDb = products.find(
+      (p) =>
+        p.name.toLowerCase() === mock.name.toLowerCase() ||
+        (p.slug && p.slug.toLowerCase() === mockSlug),
+    );
+    if (matchedInDb) return matchedInDb;
+
+    // Fallback: convert mock product to ShopProduct format
+    return {
+      id: mock.id,
+      name: mock.name,
+      slug: mockSlug,
+      description: `Shop ${mock.name} at Faiza Zone. Quality fabric, modern fit, and fast worldwide delivery.`,
+      image: mock.image,
+      images: [mock.image],
+      imageAlts: [mock.name],
+      price: mock.price,
+      oldPrice: mock.oldPrice,
+      rating: mock.rating ?? 5,
+      reviews: mock.reviews ?? 15,
+      flash: mock.flash ?? false,
+      category: mock.category ?? "Clothing",
+      sizes: ["S", "M", "L", "XL"],
+      colorNames: ["Black", "Grey", "Navy"],
+      stock: 50,
+      createdAt: new Date().toISOString(),
+      shippingFee: 0,
+    };
+  }
+
+  // 3. Fallback: match by title slug (e.g. "denim-jacket" matches "Denim Jacket")
+  const byNameSlug = products.find((p) => {
+    const nameSlug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return nameSlug === clean;
+  });
+  if (byNameSlug) return byNameSlug;
+
+  return null;
+}
+
