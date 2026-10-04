@@ -327,8 +327,10 @@ export function useHomepageConfig() {
   return useQuery({
     queryKey: ["homepage-config"],
     queryFn: fetchHomepageConfig,
-    staleTime: 5_000,
-    initialData: DEFAULT_HOMEPAGE_CONFIG,
+    staleTime: 0,
+    placeholderData: DEFAULT_HOMEPAGE_CONFIG,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 

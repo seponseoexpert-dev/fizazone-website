@@ -3,6 +3,9 @@ import { HomePage } from "@/components/shop/HomePage";
 import { getMarkets } from "@/lib/markets.functions";
 import { resolveMarket } from "@/lib/markets";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function generateMetadata({
   params,
 }: {

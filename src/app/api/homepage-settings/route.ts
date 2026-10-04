@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 const FILE_PATH = path.join(process.cwd(), "src", "data", "homepage-settings.json");
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     // 1. Try Supabase site_settings
