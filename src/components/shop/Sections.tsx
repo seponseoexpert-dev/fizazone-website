@@ -28,6 +28,7 @@ import { useSiteBanners, useSitePromotions } from "@/lib/site-content";
 import { useActiveCountries } from "@/lib/active-countries";
 import { getImageSrc } from "@/lib/utils";
 import { useHomepageConfig } from "@/lib/homepage-config";
+import { useSiteBranding } from "@/lib/site-branding";
 
 const slides = [
   {
@@ -752,6 +753,7 @@ function FooterAccordion({
 
 export function Footer() {
   const footerMarkets = useActiveCountries();
+  const { data: branding } = useSiteBranding();
   const [openQuick, setOpenQuick] = useState(true);
   const [openCat, setOpenCat] = useState(false);
   const [email, setEmail] = useState("");
@@ -761,6 +763,15 @@ export function Footer() {
       <footer className="bg-secondary/40 pb-6 pt-6 lg:bg-brand-navy lg:text-background lg:pb-0 lg:pt-10">
         {/* Mobile / tablet card footer */}
         <div className="shop-container lg:hidden">
+          {branding?.footer_logo_url || branding?.logo_url ? (
+            <div className="mb-4 flex justify-center">
+              <img
+                src={branding.footer_logo_url || branding.logo_url}
+                alt={branding.site_title || "Faiza Zone"}
+                className="h-8 w-auto max-w-[150px] object-contain"
+              />
+            </div>
+          ) : null}
           <div className="rounded-2xl border border-border bg-card p-4 shadow-[0_1px_6px_oklch(0.21_0.03_264/0.06)] sm:p-5">
             <FooterAccordion title="Quick Links" open={openQuick} onToggle={() => setOpenQuick((v) => !v)}>
               <ul className="space-y-2.5 text-xs text-muted-foreground">
@@ -857,9 +868,19 @@ export function Footer() {
         {/* Desktop footer */}
         <div className="shop-container hidden lg:grid lg:grid-cols-4 lg:gap-8">
           <div>
-            <p className="font-display text-xl font-extrabold">
-              <span className="text-sale">Faiza</span> Zone
-            </p>
+            {branding?.footer_logo_url || branding?.logo_url ? (
+              <div className="mb-3">
+                <img
+                  src={branding.footer_logo_url || branding.logo_url}
+                  alt={branding.site_title || "Faiza Zone"}
+                  className="h-10 w-auto max-h-12 max-w-[180px] object-contain object-left bg-white/10 rounded-md p-1 backdrop-blur-xs"
+                />
+              </div>
+            ) : (
+              <p className="font-display text-xl font-extrabold">
+                <span className="text-sale">Faiza</span> Zone
+              </p>
+            )}
             <p className="mt-3 max-w-xs text-xs text-background/70">
               Everyday essentials and seasonal fashion, delivered across Bangladesh, USA and UK.
             </p>

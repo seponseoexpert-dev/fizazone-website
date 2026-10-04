@@ -7,6 +7,8 @@ import { AccountProvider } from "@/lib/account";
 import { CartProvider } from "@/components/shop/cart";
 import { Toaster } from "@/components/ui/sonner";
 
+import { DynamicFavicon } from "@/components/DynamicFavicon";
+
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -25,6 +27,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <CountryProvider>
         <AccountProvider>
           <CartProvider>
+            <DynamicFavicon />
             {children}
             <Toaster position="top-center" />
           </CartProvider>

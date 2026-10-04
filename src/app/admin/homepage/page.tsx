@@ -28,6 +28,7 @@ import {
   Star,
   Trash2,
   X,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,9 +75,11 @@ const DICT = {
       categories: "Shop by Categories",
       promo_strip: "Advertisements",
       trending: "Trending Now",
+      flash_sale: "Flash Sale",
+      ethnic: "Ethnic Collection",
       mid_banner: "Promo Banner",
       popular: "Most Popular Products",
-      extra_sections: "More Sections",
+      extra_sections: "Custom Sections",
     },
     status: {
       active: "Active",
@@ -189,9 +192,11 @@ const DICT = {
       categories: "ক্যাটাগরি সমূহ",
       promo_strip: "বিজ্ঞাপন সমূহ",
       trending: "ট্রেন্ডিং প্রোডাক্ট",
+      flash_sale: "ফ্ল্যাশ সেল",
+      ethnic: "এথনিক কালেকশন",
       mid_banner: "প্রমোশনাল ব্যানার",
       popular: "জনপ্রিয় প্রোডাক্ট",
-      extra_sections: "অতিরিক্ত সেকশন",
+      extra_sections: "কাস্টম সেকশন",
     },
     status: {
       active: "চালু",
@@ -309,6 +314,8 @@ type ActiveTab =
   | "categories"
   | "promo_strip"
   | "trending"
+  | "flash_sale"
+  | "ethnic"
   | "mid_banner"
   | "popular"
   | "extra_sections";
@@ -595,6 +602,22 @@ export default function AdminHomepageStudioPage() {
               label={t.tabs.trending}
               badge={config.trending.is_active ? config.trending.layout : t.status.off}
               badgeTone={config.trending.is_active ? "amber" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "flash_sale"}
+              onClick={() => setActiveTab("flash_sale")}
+              icon={<Zap className="h-4 w-4" />}
+              label={t.tabs.flash_sale}
+              badge={config.flash_sale.is_active ? config.flash_sale.layout : t.status.off}
+              badgeTone={config.flash_sale.is_active ? "red" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "ethnic"}
+              onClick={() => setActiveTab("ethnic")}
+              icon={<Sparkles className="h-4 w-4" />}
+              label={t.tabs.ethnic}
+              badge={config.ethnic.is_active ? config.ethnic.layout : t.status.off}
+              badgeTone={config.ethnic.is_active ? "purple" : "gray"}
             />
             <TabButton
               active={activeTab === "mid_banner"}
@@ -1446,6 +1469,34 @@ export default function AdminHomepageStudioPage() {
         )}
 
         {/* ========================================================================= */}
+        {/* TAB: FLASH SALE DIRECT PRODUCT SELECTOR & WIREFRAMES                      */}
+        {/* ========================================================================= */}
+        {activeTab === "flash_sale" && (
+          <SectionConfigEditor
+            lang={lang}
+            t={t}
+            title={t.tabs.flash_sale}
+            section={config.flash_sale}
+            onUpdate={(updated) => setConfig((prev) => ({ ...prev, flash_sale: updated }))}
+            availableProducts={availableProducts}
+          />
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB: ETHNIC COLLECTION DIRECT PRODUCT SELECTOR & WIREFRAMES               */}
+        {/* ========================================================================= */}
+        {activeTab === "ethnic" && (
+          <SectionConfigEditor
+            lang={lang}
+            t={t}
+            title={t.tabs.ethnic}
+            section={config.ethnic}
+            onUpdate={(updated) => setConfig((prev) => ({ ...prev, ethnic: updated }))}
+            availableProducts={availableProducts}
+          />
+        )}
+
+        {/* ========================================================================= */}
         {/* TAB 5: MOST POPULAR PRODUCTS WITH DIRECT PRODUCT SELECTOR & WIREFRAMES     */}
         {/* ========================================================================= */}
         {activeTab === "popular" && (
@@ -1977,7 +2028,7 @@ function TabButton({
   icon: React.ReactNode;
   label: string;
   badge?: string;
-  badgeTone?: "green" | "blue" | "amber" | "gray";
+  badgeTone?: "green" | "blue" | "amber" | "red" | "purple" | "gray";
 }) {
   const badgeCls =
     badgeTone === "green"
@@ -1986,7 +2037,11 @@ function TabButton({
         ? "bg-sky-500/10 text-sky-600"
         : badgeTone === "amber"
           ? "bg-amber-500/10 text-amber-600"
-          : "bg-muted text-muted-foreground";
+          : badgeTone === "red"
+            ? "bg-rose-500/10 text-rose-600"
+            : badgeTone === "purple"
+              ? "bg-purple-500/10 text-purple-600"
+              : "bg-muted text-muted-foreground";
 
   return (
     <button

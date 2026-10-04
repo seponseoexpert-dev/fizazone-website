@@ -27,6 +27,7 @@ import { useCart } from "@/components/shop/cart";
 import { useCountry, type CountryCode } from "@/lib/country";
 import { useActiveCountries } from "@/lib/active-countries";
 import { FlagIcon } from "@/components/shop/FlagIcon";
+import { useSiteBranding } from "@/lib/site-branding";
 
 import { MegaMenuPanel, megaTabs } from "@/components/shop/MegaMenu";
 
@@ -227,6 +228,7 @@ export function Header() {
   const { country, setCountry } = useCountry();
   const { count } = useCart();
   const activeCountries = useActiveCountries();
+  const { data: branding } = useSiteBranding();
 
   // If the stored country was disabled in the admin panel, fall back to an
   // active market so the header never advertises a closed storefront.
@@ -245,15 +247,25 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
       {/* Desktop / laptop header */}
       <div className="hidden lg:block">
-        <div className="shop-container flex items-center justify-between gap-6 py-4">
+        <div className="shop-container flex items-center justify-between gap-6 py-3.5">
           {/* Logo */}
-          <Link to={`/${country.code || "bd"}`} className="shrink-0 leading-none">
-            <span className="font-display text-3xl font-extrabold tracking-tight text-sale">
-              Faiza
-            </span>
-            <span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.4em] text-muted-foreground">
-              Zone
-            </span>
+          <Link to={`/${country.code || "bd"}`} className="shrink-0 flex items-center">
+            {branding?.logo_url ? (
+              <img
+                src={branding.logo_url}
+                alt={branding.site_title || "Faiza Zone"}
+                className="h-10 sm:h-12 w-auto max-h-12 max-w-[200px] object-contain object-left transition-opacity hover:opacity-90"
+              />
+            ) : (
+              <div className="leading-none">
+                <span className="font-display text-3xl font-extrabold tracking-tight text-sale">
+                  Faiza
+                </span>
+                <span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.4em] text-muted-foreground">
+                  Zone
+                </span>
+              </div>
+            )}
           </Link>
 
           {/* Search */}
@@ -381,13 +393,23 @@ export function Header() {
 
       {/* Mobile / tablet header */}
       <div className="shop-container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2.5 lg:hidden">
-        <Link to={`/${country.code || "bd"}`} className="min-w-0 leading-none">
-          <span className="font-display text-2xl font-extrabold tracking-tight text-sale">
-            Faiza
-          </span>
-          <span className="mt-0.5 block text-[7px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
-            Zone
-          </span>
+        <Link to={`/${country.code || "bd"}`} className="min-w-0 flex items-center">
+          {branding?.logo_url ? (
+            <img
+              src={branding.logo_url}
+              alt={branding.site_title || "Faiza Zone"}
+              className="h-8 sm:h-9 w-auto max-h-9 max-w-[140px] sm:max-w-[170px] object-contain object-left transition-opacity hover:opacity-90"
+            />
+          ) : (
+            <div className="leading-none">
+              <span className="font-display text-2xl font-extrabold tracking-tight text-sale">
+                Faiza
+              </span>
+              <span className="mt-0.5 block text-[7px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
+                Zone
+              </span>
+            </div>
+          )}
         </Link>
 
         <div className="flex shrink-0 items-center gap-1.5">

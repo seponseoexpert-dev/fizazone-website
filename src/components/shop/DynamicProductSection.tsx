@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { Link } from "@/components/ui/link";
 import { ProductCard, type CardProduct } from "./ProductCard";
@@ -24,8 +24,29 @@ export function DynamicProductSection({
   products,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
   const market = useMarketPrefix();
   const { format } = useCountry();
+
+  // Smooth automatic scrolling without visible scrollbar
+  useEffect(() => {
+    if (layout !== "carousel" || isPaused) return;
+
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        const maxScroll = scrollWidth - clientWidth - 5;
+        const step = clientWidth > 640 ? clientWidth * 0.28 : clientWidth * 0.75;
+        if (scrollLeft >= maxScroll) {
+          scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          scrollRef.current.scrollTo({ left: scrollLeft + step, behavior: "smooth" });
+        }
+      }
+    }, 3200);
+
+    return () => clearInterval(interval);
+  }, [layout, isPaused]);
 
   if (!products || products.length === 0) return null;
 
@@ -66,7 +87,7 @@ export function DynamicProductSection({
                 type="button"
                 aria-label="Scroll left"
                 onClick={() => scroll("left")}
-                className="grid h-8 w-8 place-items-center rounded-full border border-sale/30 text-sale hover:bg-sale hover:text-white transition shadow-sm"
+                className="grid h-8 w-8 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-sale hover:text-white hover:border-sale transition shadow-xs"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -74,7 +95,7 @@ export function DynamicProductSection({
                 type="button"
                 aria-label="Scroll right"
                 onClick={() => scroll("right")}
-                className="grid h-8 w-8 place-items-center rounded-full border border-sale/30 text-sale hover:bg-sale hover:text-white transition shadow-sm"
+                className="grid h-8 w-8 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-sale hover:text-white hover:border-sale transition shadow-xs"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -87,7 +108,11 @@ export function DynamicProductSection({
       {layout === "carousel" && (
         <div
           ref={scrollRef}
-          className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-3 scroll-smooth snap-x snap-mandatory [scrollbar-width:thin] lg:gap-4"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(false)}
+          className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-3 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-4"
         >
           {products.map((p) => (
             <div

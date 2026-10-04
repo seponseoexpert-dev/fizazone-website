@@ -96,6 +96,34 @@ function AdminSettingsContent() {
     setSaving(true);
     try {
       await saveSetting(section.key, values);
+
+      if (section.key === "site" || section.key === "theme") {
+        const logoUrl = (values.logo_url as string) || "";
+        const faviconUrl = (values.favicon_url as string) || "";
+        const footerLogoUrl = (values.footer_logo_url as string) || logoUrl;
+        const siteTitle = (values.site_title as string) || "";
+
+        if (typeof window !== "undefined") {
+          try {
+            const current = JSON.parse(localStorage.getItem("fz_site_branding") || "{}");
+            const updated = {
+              ...current,
+              ...(logoUrl ? { logo_url: logoUrl } : {}),
+              ...(faviconUrl ? { favicon_url: faviconUrl } : {}),
+              ...(footerLogoUrl ? { footer_logo_url: footerLogoUrl } : {}),
+              ...(siteTitle ? { site_title: siteTitle } : {}),
+            };
+            localStorage.setItem("fz_site_branding", JSON.stringify(updated));
+            window.dispatchEvent(new CustomEvent("fz_site_branding_updated"));
+          } catch {}
+          if (faviconUrl) {
+            import("@/lib/site-branding").then(({ updateFaviconInDocument }) => {
+              updateFaviconInDocument(faviconUrl);
+            });
+          }
+        }
+      }
+
       toast.success(`${section.label} settings saved`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save settings");
