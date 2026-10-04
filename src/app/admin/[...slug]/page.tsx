@@ -17,6 +17,7 @@ const PAGES = [
   { label: "Countries", to: "/admin/countries" },
   { label: "Categories", to: "/admin/categories" },
   { label: "Homepage Banners", to: "/admin/banners" },
+  { label: "Homepage Sections", to: "/admin/homepage" },
   { label: "Coupons", to: "/admin/coupons" },
   { label: "Promotions", to: "/admin/promotions" },
   { label: "Product Sections", to: "/admin/product-sections" },

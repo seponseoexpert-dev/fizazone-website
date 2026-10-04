@@ -1,0 +1,125 @@
+{
+  "hero_enabled": true,
+  "categories": {
+    "enabled": true,
+    "title": "Shop by Categories",
+    "mode": "all",
+    "layout": "grid_8",
+    "items": [
+      { "id": "cat-1", "name": "Men", "is_active": true },
+      { "id": "cat-2", "name": "Women", "is_active": true },
+      { "id": "cat-3", "name": "Kurti", "is_active": true },
+      { "id": "cat-4", "name": "Panjabi", "is_active": true },
+      { "id": "cat-5", "name": "Boys", "is_active": true },
+      { "id": "cat-6", "name": "T-shirt", "is_active": true },
+      { "id": "cat-7", "name": "Pants", "is_active": true },
+      { "id": "cat-8", "name": "Bags", "is_active": true }
+    ]
+  },
+  "promo_strip": {
+    "enabled": true,
+    "title": "",
+    "items": [
+      {
+        "id": "promo-1",
+        "title": "Exclusive for Man",
+        "tag": "Winter",
+        "badge": "2026-27",
+        "description": "Available in store & online",
+        "image": "",
+        "link": "/categories?category=Men",
+        "bg_color": "bg-brand-blush",
+        "is_active": true
+      },
+      {
+        "id": "promo-2",
+        "title": "Exclusive for Woman",
+        "tag": "Winter",
+        "badge": "2026-27",
+        "description": "Available in store & online",
+        "image": "",
+        "link": "/categories?category=Women",
+        "bg_color": "bg-brand-sky",
+        "is_active": true
+      },
+      {
+        "id": "promo-3",
+        "title": "Exclusive for Kids",
+        "tag": "Winter",
+        "badge": "2026-27",
+        "description": "Available in store & online",
+        "image": "",
+        "link": "/categories?category=Boys",
+        "bg_color": "bg-secondary",
+        "is_active": true
+      }
+    ]
+  },
+  "trending": {
+    "id": "sec-trending",
+    "key": "trending",
+    "name": "Trendy Now",
+    "action_label": "View all",
+    "action_link": "/categories",
+    "is_active": true,
+    "layout": "grid_4",
+    "source": "auto",
+    "selected_product_ids": [],
+    "max_items": 8
+  },
+  "mid_banner": {
+    "enabled": true,
+    "banners": [
+      {
+        "id": "banner-1",
+        "image": "",
+        "tag": "Winter",
+        "title": "Collection",
+        "description": "Insulated layers, heavy knits and weather-ready outerwear.",
+        "button_text": "SHOP NOW",
+        "button_link": "/categories",
+        "align": "right",
+        "is_active": true
+      }
+    ]
+  },
+  "ethnic": {
+    "id": "sec-ethnic",
+    "key": "ethnic",
+    "name": "Ethnic Collection",
+    "action_label": "View all",
+    "action_link": "/categories",
+    "is_active": true,
+    "layout": "grid_4",
+    "source": "auto",
+    "category_filter": "Kurti",
+    "selected_product_ids": [],
+    "max_items": 8
+  },
+  "flash_sale": {
+    "id": "sec-flash",
+    "key": "flash_sale",
+    "name": "Flash Sale",
+    "action_label": "View all",
+    "action_link": "/categories",
+    "is_active": true,
+    "layout": "grid_4",
+    "source": "auto",
+    "selected_product_ids": [],
+    "max_items": 8
+  },
+  "popular": {
+    "id": "sec-popular",
+    "key": "popular",
+    "name": "Most Popular",
+    "action_label": "View all",
+    "action_link": "/categories",
+    "is_active": true,
+    "layout": "grid_4",
+    "source": "auto",
+    "selected_product_ids": [],
+    "max_items": 8
+  },
+  "extra_sections": [],
+  "features_enabled": true
+}

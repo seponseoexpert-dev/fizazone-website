@@ -27,6 +27,7 @@ import { categories } from "./data";
 import { useSiteBanners, useSitePromotions } from "@/lib/site-content";
 import { useActiveCountries } from "@/lib/active-countries";
 import { getImageSrc } from "@/lib/utils";
+import { useHomepageConfig } from "@/lib/homepage-config";
 
 const slides = [
   {
@@ -84,6 +85,7 @@ const fallbackSlides: HeroSlide[] = slides.map((s) => ({
 }));
 
 export function Hero() {
+  const { data: homeConfig } = useHomepageConfig();
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const { data: banners } = useSiteBanners();
@@ -119,6 +121,10 @@ export function Hero() {
     const id = setInterval(() => setIndex((i) => (i + 1) % count), SLIDE_MS);
     return () => clearInterval(id);
   }, [playing, count]);
+
+  if (homeConfig && homeConfig.hero_enabled === false) {
+    return null;
+  }
 
   return (
     <section className="shop-container pt-4 sm:pt-6">
@@ -271,29 +277,130 @@ export function SectionHeader({ title, action }: { title: string; action?: strin
 }
 
 export function Categories() {
+  const { data: homeConfig } = useHomepageConfig();
+  const config = homeConfig?.categories;
+
+  if (config && config.enabled === false) return null;
+
+  const title = config?.title || "Shop by Categories";
+  const mode = config?.mode || "all";
+  const layout = config?.layout || "grid_8";
+
+  let displayCategories = categories;
+  if (config?.items && config.items.length > 0) {
+    if (mode === "selected") {
+      const activeNames = new Set(
+        config.items.filter((it) => it.is_active).map((it) => it.name.toLowerCase()),
+      );
+      displayCategories = categories.filter((c) => activeNames.has(c.name.toLowerCase()));
+    } else {
+      const inactiveNames = new Set(
+        config.items.filter((it) => !it.is_active).map((it) => it.name.toLowerCase()),
+      );
+      displayCategories = categories.filter((c) => !inactiveNames.has(c.name.toLowerCase()));
+    }
+  }
+
+  if (displayCategories.length === 0) return null;
+
   return (
     <section className="shop-container py-8 sm:py-10">
-      <SectionHeader title="Shop by Categories" />
-      <div className="grid grid-cols-4 gap-3 lg:grid-cols-8">
-        {categories.map((c) => (
-          <Link
-            key={c.name}
-            to="/categories"
-            search={{ category: c.name }}
-            className="overflow-hidden rounded-xl border border-border bg-card p-2 text-center transition-colors duration-200 hover:border-sale"
-          >
-            <img
-              src={c.image}
-              alt={c.name}
-              loading="lazy"
-              width={700}
-              height={700}
-              className="aspect-square w-full rounded-lg object-cover"
-            />
-            <span className="mt-2 block truncate text-[11px] font-semibold text-brand-navy">{c.name}</span>
-          </Link>
-        ))}
-      </div>
+      <SectionHeader title={title} />
+      {layout === "grid_8" && (
+        <div className="grid grid-cols-4 gap-3 lg:grid-cols-8">
+          {displayCategories.map((c) => (
+            <Link
+              key={c.name}
+              to="/categories"
+              search={{ category: c.name }}
+              className="group overflow-hidden rounded-xl border border-border bg-card p-2 text-center transition-colors duration-200 hover:border-sale"
+            >
+              <img
+                src={c.image}
+                alt={c.name}
+                loading="lazy"
+                width={700}
+                height={700}
+                className="aspect-square w-full rounded-lg object-cover transition duration-300 group-hover:scale-105"
+              />
+              <span className="mt-2 block truncate text-[11px] font-semibold text-brand-navy">
+                {c.name}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {layout === "grid_4" && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-4">
+          {displayCategories.map((c) => (
+            <Link
+              key={c.name}
+              to="/categories"
+              search={{ category: c.name }}
+              className="group overflow-hidden rounded-xl border border-border bg-card p-3 text-center transition hover:border-sale"
+            >
+              <img
+                src={c.image}
+                alt={c.name}
+                loading="lazy"
+                className="aspect-square w-full rounded-lg object-cover transition group-hover:scale-105"
+              />
+              <span className="mt-2 block truncate text-xs sm:text-sm font-semibold text-brand-navy">
+                {c.name}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {layout === "carousel" && (
+        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 snap-x [scrollbar-width:none]">
+          {displayCategories.map((c) => (
+            <Link
+              key={c.name}
+              to="/categories"
+              search={{ category: c.name }}
+              className="group w-28 sm:w-36 shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-card p-2 text-center transition hover:border-sale"
+            >
+              <img
+                src={c.image}
+                alt={c.name}
+                loading="lazy"
+                className="aspect-square w-full rounded-lg object-cover transition group-hover:scale-105"
+              />
+              <span className="mt-2 block truncate text-[11px] font-semibold text-brand-navy">
+                {c.name}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {layout === "rounded" && (
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+          {displayCategories.map((c) => (
+            <Link
+              key={c.name}
+              to="/categories"
+              search={{ category: c.name }}
+              className="group flex flex-col items-center text-center"
+            >
+              <div className="h-16 w-16 sm:h-20 sm:w-20 overflow-hidden rounded-full border-2 border-border p-0.5 transition group-hover:border-sale group-hover:scale-105">
+                <img
+                  src={c.image}
+                  alt={c.name}
+                  loading="lazy"
+                  className="h-full w-full rounded-full object-cover"
+                />
+              </div>
+              <span className="mt-2 text-xs font-semibold text-brand-navy group-hover:text-sale">
+                {c.name}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -329,9 +436,12 @@ type PromoItem = {
   image: string;
   alt: string;
   href: string;
+  tag?: string;
+  badge?: string;
+  description?: string;
 };
 
-const tints = ["bg-brand-blush", "bg-brand-sky", "bg-secondary"];
+const tints = ["bg-brand-blush", "bg-brand-sky", "bg-secondary", "bg-amber-500/10", "bg-emerald-500/10"];
 
 const fallbackPromos: PromoItem[] = promos.map((p) => ({
   key: p.title,
@@ -340,22 +450,62 @@ const fallbackPromos: PromoItem[] = promos.map((p) => ({
   image: getImageSrc(p.image),
   alt: p.alt,
   href: `/categories?category=${encodeURIComponent(p.category)}`,
+  tag: "Winter",
+  badge: "2026-27",
+  description: "Available in store & online",
 }));
 
 export function PromoStrip() {
+  const { data: homeConfig } = useHomepageConfig();
   const { data } = useSitePromotions();
+
+  if (homeConfig?.promo_strip && homeConfig.promo_strip.enabled === false) {
+    return null;
+  }
+
+  const configuredItems = homeConfig?.promo_strip?.items?.filter((it) => it.is_active);
   const small = (data ?? []).filter((p) => p.type === "small");
 
-  const items: PromoItem[] = small.length
-    ? small.map((p, i) => ({
-        key: p.id,
-        title: p.name,
-        bg: tints[i % tints.length]!,
-        image: p.image_url,
-        alt: p.name,
-        href: p.link || "/categories",
-      }))
-    : fallbackPromos;
+  let items: PromoItem[] = [];
+
+  if (configuredItems && configuredItems.length > 0) {
+    items = configuredItems.map((p, i) => ({
+      key: p.id || `promo-${i}`,
+      title: p.title,
+      bg: p.bg_color || tints[i % tints.length]!,
+      image: p.image || fallbackPromos[i % fallbackPromos.length]?.image || "",
+      alt: p.title,
+      href: p.link || "/categories",
+      tag: p.tag || "Winter",
+      badge: p.badge || "2026-27",
+      description: p.description || "Available in store & online",
+    }));
+  } else if (small.length > 0) {
+    items = small.map((p, i) => ({
+      key: p.id,
+      title: p.name,
+      bg: tints[i % tints.length]!,
+      image: p.image_url,
+      alt: p.name,
+      href: p.link || "/categories",
+      tag: "Winter",
+      badge: "2026-27",
+      description: "Available in store & online",
+    }));
+  } else {
+    items = fallbackPromos;
+  }
+
+  if (items.length === 0) return null;
+
+  const colsClass =
+    items.length === 1
+      ? "lg:grid-cols-1 max-w-lg mx-auto"
+      : items.length === 2
+        ? "lg:grid-cols-2"
+        : items.length === 4
+          ? "lg:grid-cols-4"
+          : "lg:grid-cols-3";
 
   return (
     <section className="shop-container">
@@ -365,8 +515,8 @@ export function PromoStrip() {
           <PromoCard key={p.key} promo={p} className="w-[78%] shrink-0 snap-start sm:w-[46%]" />
         ))}
       </div>
-      {/* Desktop: 3 up grid */}
-      <div className="hidden gap-3 lg:grid lg:grid-cols-3">
+      {/* Desktop: responsive grid matching item count */}
+      <div className={`hidden gap-3 lg:grid ${colsClass}`}>
         {items.map((p) => (
           <PromoCard key={p.key} promo={p} />
         ))}
@@ -379,31 +529,92 @@ function PromoCard({ promo, className = "" }: { promo: PromoItem; className?: st
   return (
     <a
       href={promo.href}
-      className={`group relative flex items-center justify-between overflow-hidden rounded-xl ${promo.bg} p-4 transition-shadow hover:shadow-[0_2px_10px_rgb(0,0,0,0.08)] sm:p-5 ${className}`}
+      className={`group relative flex items-center justify-between overflow-hidden rounded-xl ${promo.bg} p-4 transition-all duration-300 hover:shadow-[0_4px_16px_rgb(0,0,0,0.1)] sm:p-5 ${className}`}
     >
-      <div className="min-w-0 flex-1">
-        <p className="font-display text-lg italic text-sale">Winter</p>
-        <h3 className="mt-1 truncate text-sm font-bold sm:text-base">{promo.title}</h3>
-        <p className="text-xs text-muted-foreground">2022-23</p>
-        <p className="mt-2 text-[11px] text-muted-foreground">Available in store &amp; online</p>
+      <div className="min-w-0 flex-1 pr-2">
+        {promo.tag && <p className="font-display text-lg italic text-sale">{promo.tag}</p>}
+        <h3 className="mt-1 truncate text-sm font-bold sm:text-base text-foreground">{promo.title}</h3>
+        {promo.badge && <p className="text-xs text-muted-foreground">{promo.badge}</p>}
+        {promo.description && (
+          <p className="mt-2 text-[11px] text-muted-foreground line-clamp-2">{promo.description}</p>
+        )}
       </div>
-      <img
-        src={promo.image}
-        alt={promo.alt}
-        loading="lazy"
-        width={800}
-        height={800}
-        className="h-24 w-24 shrink-0 rounded-lg object-cover object-top transition-transform duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
-      />
+      {promo.image ? (
+        <img
+          src={promo.image}
+          alt={promo.alt}
+          loading="lazy"
+          width={800}
+          height={800}
+          className="h-24 w-24 shrink-0 rounded-lg object-cover object-top transition-transform duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
+        />
+      ) : null}
     </a>
   );
 }
 
-
 export function WinterBanner() {
+  const { data: homeConfig } = useHomepageConfig();
   const { data } = useSitePromotions();
-  const big = (data ?? []).find((p) => p.type === "big");
 
+  if (homeConfig?.mid_banner && homeConfig.mid_banner.enabled === false) {
+    return null;
+  }
+
+  const configured = homeConfig?.mid_banner?.banners?.find((b) => b.is_active);
+
+  if (configured) {
+    const bannerImg = configured.image || getImageSrc(winterImg);
+    const textAlignCls =
+      configured.align === "left"
+        ? "inset-y-0 left-0 text-left pl-6 sm:pl-10 items-start"
+        : configured.align === "center"
+          ? "inset-0 text-center items-center px-4"
+          : "inset-y-0 right-0 text-right pr-6 sm:pr-10 items-end";
+
+    return (
+      <section className="shop-container py-8 sm:py-10">
+        <div className="relative overflow-hidden rounded-2xl shadow-sm">
+          <img
+            src={bannerImg}
+            alt={configured.title || "Banner"}
+            loading="lazy"
+            width={1600}
+            height={560}
+            className="h-44 w-full object-cover sm:h-60 md:h-72"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/30" />
+          <div className={`absolute flex flex-col justify-center w-full sm:w-3/5 ${textAlignCls}`}>
+            {configured.tag && (
+              <p className="font-display text-xl italic text-sale sm:text-3xl drop-shadow">
+                {configured.tag}
+              </p>
+            )}
+            <h2 className="text-2xl font-extrabold text-white sm:text-4xl md:text-5xl drop-shadow">
+              {configured.title || "Collection"}
+            </h2>
+            {configured.description && (
+              <p className="mt-2 hidden text-xs text-white/90 sm:block sm:text-sm max-w-md drop-shadow">
+                {configured.description}
+              </p>
+            )}
+            {configured.button_text && (
+              <div className="mt-4">
+                <Link
+                  to={configured.button_link || "/categories"}
+                  className="inline-flex items-center rounded-full bg-sale px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md transition hover:scale-105 hover:bg-sale/95"
+                >
+                  {configured.button_text}
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const big = (data ?? []).find((p) => p.type === "big");
   if (big) {
     return (
       <section className="shop-container py-8 sm:py-10">

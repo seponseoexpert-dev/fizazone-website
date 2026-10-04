@@ -72,7 +72,10 @@ const NAV: NavGroup[] = [
   },
   {
     label: "Content",
-    items: [{ label: "Homepage Banners", icon: ImageIcon, to: "/admin/banners" }],
+    items: [
+      { label: "Homepage Banners", icon: ImageIcon, to: "/admin/banners" },
+      { label: "Homepage Sections", icon: LayoutDashboard, to: "/admin/homepage" },
+    ],
   },
   {
     label: "Promo",
