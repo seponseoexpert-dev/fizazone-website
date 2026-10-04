@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/components/ui/link";
 import {
   Boxes,
@@ -9,24 +9,19 @@ import {
   ChevronRight,
   Eye,
   Flame,
+  Globe,
   Grid,
   Image as ImageIcon,
   Layers,
   LayoutDashboard,
-  LayoutGrid,
   Loader2,
   Megaphone,
-  Palette,
-  Pencil,
   Plus,
-  RefreshCw,
   RotateCcw,
   Save,
   Search,
-  Sliders,
   Sparkles,
   Star,
-  Tag,
   Trash2,
   X,
 } from "lucide-react";
@@ -48,6 +43,223 @@ import {
 } from "@/lib/homepage-config";
 import { allProducts, categories as defaultCategories, type Product } from "@/components/shop/data";
 
+type Lang = "en" | "bn";
+
+const DICT = {
+  en: {
+    pageTitle: "Homepage Customizer & Sections",
+    pageDesc: "Configure homepage sections, categories, advertisements, trending layouts, and featured products.",
+    resetBtn: "Reset",
+    previewBtn: "Preview Store",
+    saveBtn: "Save All Changes",
+    savingBtn: "Saving...",
+    tabs: {
+      categories: "Shop by Categories",
+      promo_strip: "Advertisements",
+      trending: "Trending Now",
+      mid_banner: "Promo Banner",
+      popular: "Most Popular Products",
+      extra_sections: "More Sections",
+    },
+    status: {
+      active: "Active",
+      off: "Off",
+      enabled: "Section Enabled",
+      disabled: "Section Disabled",
+      itemsEnabled: "of items enabled",
+      selectedCount: "products selected",
+    },
+    categories: {
+      title: "Category by Shop Management",
+      desc: "Enable/disable category section, choose display style, select all or handpick categories.",
+      headingLabel: "Section Heading",
+      modeLabel: "Category Display Mode",
+      modeAll: "All Categories",
+      modeSelected: "Selected Categories Only",
+      layoutLabel: "Layout Style",
+      listLabel: "Categories ON/OFF & Selection",
+    },
+    promo: {
+      title: "Advertisements Strip Management",
+      desc: "Control promotional ad cards with custom text, images, badges, links, and multiple advertisements.",
+      addBtn: "Add Advertisement",
+      noAds: "No advertisements added yet. Click 'Add Advertisement' to create one.",
+      mainTitle: "Main Title",
+      tagText: "Eyebrow Tag",
+      badgeText: "Badge Text",
+      linkText: "Target Link",
+      bgText: "Theme Color",
+      descText: "Description Note",
+      imageLabel: "Ad Image (Upload or URL)",
+      uploadBtn: "Upload Promo Image",
+    },
+    midBanner: {
+      title: "Mid-Page Promo Banner",
+      desc: "Change or add mid-page callout banner with image, headline, button, and text alignments.",
+      tagLabel: "Eyebrow Tag (e.g. Winter)",
+      headlineLabel: "Headline Title (e.g. Collection)",
+      buttonLabel: "Button Text",
+      linkLabel: "Button Link",
+      alignLabel: "Text Alignment",
+      alignRight: "Right Aligned",
+      alignLeft: "Left Aligned",
+      alignCenter: "Centered",
+      descLabel: "Description",
+      imageLabel: "Banner Image (Upload or URL)",
+      uploadBtn: "Upload Banner Image",
+    },
+    sections: {
+      headingLabel: "Section Heading",
+      actionLabel: "Action Button Text",
+      maxLabel: "Max Products to Show",
+      layoutLabel: "Display Style & Layout",
+      activeStyle: "ACTIVE STYLE",
+      sourceLabel: "Product Source",
+      sourceAuto: "Auto / All",
+      sourceHandpick: "Handpick Products",
+      selectedLabel: "Selected Products",
+      searchPlaceholder: "Search products to select by name or category...",
+      noSelected: "No products handpicked yet. Click on any product below to select it.",
+      availableTitle: "Store Products Catalog (Click to select/unselect)",
+    },
+    layouts: {
+      carousel: {
+        label: "Horizontal Scroll (Carousel)",
+        desc: "Swipeable slider with left/right arrows for touch and mobile friendliness",
+      },
+      grid_3: {
+        label: "3 Products Per Line (3 Columns)",
+        desc: "Spacious 3-column grid highlighting product details",
+      },
+      grid_4: {
+        label: "4 Products Per Line (4 Columns)",
+        desc: "Standard modern e-commerce 4-column product grid",
+      },
+      featured: {
+        label: "Featured Hero + Side Grid",
+        desc: "1 large highlight card on the left + 4 products on the right",
+      },
+      two_column: {
+        label: "2-Column Showcase",
+        desc: "Prominent wide cards with details and quick action buttons",
+      },
+    },
+    toasts: {
+      saveSuccess: "Homepage configuration saved successfully!",
+      saveError: "Failed to save configuration",
+      resetConfirm: "Are you sure you want to reset all homepage settings to defaults?",
+      resetDone: "Settings reset to defaults. Click 'Save All Changes' to apply.",
+      deleteConfirm: "Delete this item?",
+    },
+  },
+  bn: {
+    pageTitle: "হোমপেজ কাস্টমাইজার ও সেকশন নিয়ন্ত্রণ",
+    pageDesc: "হোমপেজের প্রতিটি সেকশন, ক্যাটাগরি, বিজ্ঞাপন, ট্রেন্ডিং প্রোডাক্ট লেআউট এবং ফিচার্ড প্রোডাক্ট নিয়ন্ত্রণ করুন।",
+    resetBtn: "রিসেট",
+    previewBtn: "প্রিভিউ স্টোর",
+    saveBtn: "সব পরিবর্তন সেভ করুন",
+    savingBtn: "সেভ হচ্ছে...",
+    tabs: {
+      categories: "ক্যাটাগরি সমূহ",
+      promo_strip: "বিজ্ঞাপন সমূহ",
+      trending: "ট্রেন্ডিং প্রোডাক্ট",
+      mid_banner: "প্রমোশনাল ব্যানার",
+      popular: "জনপ্রিয় প্রোডাক্ট",
+      extra_sections: "অতিরিক্ত সেকশন",
+    },
+    status: {
+      active: "চালু",
+      off: "বন্ধ",
+      enabled: "সেকশন চালু আছে",
+      disabled: "সেকশন বন্ধ আছে",
+      itemsEnabled: "টি আইটেম চালু আছে",
+      selectedCount: "টি প্রোডাক্ট নির্বাচিত",
+    },
+    categories: {
+      title: "ক্যাটাগরি সেকশন ব্যবস্থাপনা",
+      desc: "ক্যাটাগরি সেকশন চালু/বন্ধ করুন, স্টাইল পরিবর্তন করুন এবং নির্দিষ্ট ক্যাটাগরি নির্বাচন করুন।",
+      headingLabel: "সেকশন শিরোনাম",
+      modeLabel: "ক্যাটাগরি প্রদর্শন মোড",
+      modeAll: "সকল ক্যাটাগরি",
+      modeSelected: "শুধু নির্বাচিত ক্যাটাগরি",
+      layoutLabel: "প্রদর্শনের স্টাইল",
+      listLabel: "ক্যাটাগরি অন/অফ ও নির্বাচন",
+    },
+    promo: {
+      title: "বিজ্ঞাপন স্ট্রিপ ব্যবস্থাপনা",
+      desc: "কাস্টম টেক্সট, ছবি, ব্যাজ, লিংক ও থিম কালার সহ একাধিক বিজ্ঞাপন নিয়ন্ত্রণ করুন।",
+      addBtn: "নতুন বিজ্ঞাপন যোগ করুন",
+      noAds: "কোনো বিজ্ঞাপন তৈরি করা হয়নি। 'নতুন বিজ্ঞাপন যোগ করুন' বাটনে ক্লিক করুন।",
+      mainTitle: "বিজ্ঞাপনের মূল শিরোনাম",
+      tagText: "ট্যাগ টেক্সট",
+      badgeText: "ব্যাজ টেক্সট",
+      linkText: "টার্গেট লিংক",
+      bgText: "থিম কালার",
+      descText: "বিবরণী নোট",
+      imageLabel: "বিজ্ঞাপনের ছবি (আপলোড বা URL)",
+      uploadBtn: "বিজ্ঞাপনের ছবি আপলোড",
+    },
+    midBanner: {
+      title: "বিজ্ঞাপন ব্যানার (মাঝখানের ব্যানার)",
+      desc: "হোমপেজের মাঝখানের ব্যানার পরিবর্তন করুন, ছবি আপলোড করুন ও টেক্সট সাজান।",
+      tagLabel: "ট্যাগ টেক্সট (যেমন: Winter)",
+      headlineLabel: "মূল শিরোনাম (যেমন: Collection)",
+      buttonLabel: "বাটন টেক্সট",
+      linkLabel: "বাটন লিংক",
+      alignLabel: "টেক্সট অ্যালাইনমেন্ট",
+      alignRight: "ডান পাশে",
+      alignLeft: "বাম পাশে",
+      alignCenter: "মাঝখানে",
+      descLabel: "বর্ণনা",
+      imageLabel: "ব্যানারের ছবি (আপলোড বা URL)",
+      uploadBtn: "ব্যানার ছবি আপলোড",
+    },
+    sections: {
+      headingLabel: "সেকশন শিরোনাম",
+      actionLabel: "বাটন টেক্সট",
+      maxLabel: "সর্বোচ্চ প্রোডাক্ট সংখ্যা",
+      layoutLabel: "প্রদর্শনের স্টাইল ও লেআউট",
+      activeStyle: "নির্বাচিত স্টাইল",
+      sourceLabel: "প্রোডাক্ট সোর্স",
+      sourceAuto: "স্বয়ংক্রিয় / সকল",
+      sourceHandpick: "নির্দিষ্ট প্রোডাক্ট নির্বাচন",
+      selectedLabel: "নির্বাচিত প্রোডাক্ট সমূহ",
+      searchPlaceholder: "প্রোডাক্টের নাম বা ক্যাটাগরি লিখে খুঁজুন...",
+      noSelected: "এখনও কোনো প্রোডাক্ট নির্বাচন করা হয়নি। নিচের তালিকা থেকে প্রোডাক্ট সিলেক্ট করুন।",
+      availableTitle: "স্টোরের সকল প্রোডাক্ট (সিলেক্ট করতে ক্লিক করুন)",
+    },
+    layouts: {
+      carousel: {
+        label: "হরাইজন্টাল স্ক্রোল (ক্যারোসেল)",
+        desc: "মোবাইল ও ডেক্সটপে ডানে-বামে অ্যারো দিয়ে সোয়াইপযোগ্য স্লাইডার",
+      },
+      grid_3: {
+        label: "এক লাইনে ৩টি প্রোডাক্ট (৩ কলাম)",
+        desc: "প্রশস্ত ৩-কলাম বিশিষ্ট আকর্ষণীয় গ্রিড লেআউট",
+      },
+      grid_4: {
+        label: "এক লাইনে ৪টি প্রোডাক্ট (৪ কলাম)",
+        desc: "আধুনিক ই-কমার্স স্ট্যান্ডার্ড ৪-কলাম বিশিষ্ট গ্রিড",
+      },
+      featured: {
+        label: "ফিচার্ড হিরো কার্ড + সাইড গ্রিড",
+        desc: "বামে ১টি বড় হাইলাইট কার্ড এবং ডানে ৪টি ছোট কার্ড",
+      },
+      two_column: {
+        label: "২-কলাম বিশিষ্ট বড় কার্ড শোকেস",
+        desc: "বিস্তারিত তথ্য ও বাটন সহ প্রশস্ত ২-কলাম কার্ড শোকেস",
+      },
+    },
+    toasts: {
+      saveSuccess: "হোমপেজ সেটিংস সফলভাবে সেভ করা হয়েছে!",
+      saveError: "সেটিংস সেভ করতে ব্যর্থ হয়েছে",
+      resetConfirm: "আপনি কি সব সেটিংস ডিফল্ট অবস্থায় ফিরিয়ে নিতে চান?",
+      resetDone: "সেটিংস ডিফল্ট করা হয়েছে। পরিবর্তন নিশ্চিত করতে 'সব পরিবর্তন সেভ করুন' বাটনে চাপুন।",
+      deleteConfirm: "আপনি কি এটি ডিলিট করতে চান?",
+    },
+  },
+};
+
 const TINTS = [
   { label: "Blush Pink", value: "bg-brand-blush", preview: "#fde8e8" },
   { label: "Sky Blue", value: "bg-brand-sky", preview: "#e0f2fe" },
@@ -56,44 +268,6 @@ const TINTS = [
   { label: "Emerald Mint", value: "bg-emerald-500/10", preview: "#d1fae5" },
   { label: "Rose Coral", value: "bg-rose-500/10", preview: "#ffe4e6" },
   { label: "Indigo Violet", value: "bg-indigo-500/10", preview: "#e0e7ff" },
-];
-
-const LAYOUT_OPTIONS: {
-  id: ProductSectionLayout;
-  label: string;
-  desc: string;
-  iconName: string;
-}[] = [
-  {
-    id: "carousel",
-    label: "Horizontal Scroll (Carousel)",
-    desc: "Swipeable slider with left/right arrows for touch and mobile friendliness",
-    iconName: "carousel",
-  },
-  {
-    id: "grid_3",
-    label: "3 Products Per Line (3 Columns)",
-    desc: "Spacious 3-column grid highlighting product details",
-    iconName: "grid_3",
-  },
-  {
-    id: "grid_4",
-    label: "4 Products Per Line (4 Columns)",
-    desc: "Standard modern e-commerce 4-column product grid",
-    iconName: "grid_4",
-  },
-  {
-    id: "featured",
-    label: "Featured Hero + Side Grid",
-    desc: "1 large highlight card on the left + 4 products on the right",
-    iconName: "featured",
-  },
-  {
-    id: "two_column",
-    label: "2-Column Showcase",
-    desc: "Prominent wide cards with details and quick action buttons",
-    iconName: "two_column",
-  },
 ];
 
 type ActiveTab =
@@ -110,14 +284,21 @@ export default function AdminHomepageStudioPage() {
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
   const [activeTab, setActiveTab] = useState<ActiveTab>("categories");
-
-  // Product Picker state
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerTarget, setPickerTarget] = useState<string | null>(null);
-  const [pickerSearch, setPickerSearch] = useState("");
-
-  // Product List (from DB + fallback)
+  const [lang, setLang] = useState<Lang>("bn"); // default to Bengali, switchable to English
   const [availableProducts, setAvailableProducts] = useState<Product[]>(allProducts);
+
+  const t = DICT[lang];
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+
+  // Tab scroll navigation
+  const scrollTabs = (dir: "left" | "right") => {
+    if (tabsScrollRef.current) {
+      tabsScrollRef.current.scrollBy({
+        left: dir === "left" ? -200 : 200,
+        behavior: "smooth",
+      });
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -125,7 +306,7 @@ export default function AdminHomepageStudioPage() {
       const cfg = await fetchHomepageConfig();
       setConfig(cfg);
 
-      // Also try fetching latest products from DB
+      // Load products from DB
       try {
         const { data: dbProducts } = await supabase
           .from("products")
@@ -145,7 +326,6 @@ export default function AdminHomepageStudioPage() {
             flash: Boolean(p.sale_price),
           }));
 
-          // Merge without duplicates
           const seen = new Set<string>();
           const merged = [...mapped, ...allProducts].filter((p) =>
             seen.has(p.id) ? false : seen.add(p.id),
@@ -156,17 +336,16 @@ export default function AdminHomepageStudioPage() {
         console.warn("DB product fetch fallback:", e);
       }
     } catch (err) {
-      toast.error("Could not load homepage configuration");
+      toast.error(lang === "bn" ? "হোমপেজ ডাটা লোড করা যায়নি" : "Could not load homepage data");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [lang]);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       if (!data.user) {
-        // Allow in development/preview or check admin
         setAllowed(true);
         void loadData();
         return;
@@ -181,9 +360,9 @@ export default function AdminHomepageStudioPage() {
     setSaving(true);
     try {
       await saveHomepageConfig(config);
-      toast.success("Homepage configuration saved successfully!");
+      toast.success(t.toasts.saveSuccess);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save configuration";
+      const msg = err instanceof Error ? err.message : t.toasts.saveError;
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -191,52 +370,10 @@ export default function AdminHomepageStudioPage() {
   };
 
   const handleReset = () => {
-    if (window.confirm("Are you sure you want to reset all homepage settings to defaults?")) {
+    if (window.confirm(t.toasts.resetConfirm)) {
       setConfig(DEFAULT_HOMEPAGE_CONFIG);
-      toast.info("Settings reset to defaults. Click 'Save Changes' to apply.");
+      toast.info(t.toasts.resetDone);
     }
-  };
-
-  /* Helper to toggle product in a section's handpicked list */
-  const toggleProductSelection = (sectionKey: string, productId: string) => {
-    setConfig((prev) => {
-      const updateSection = (sec: ProductSectionConfig) => {
-        const currentIds = sec.selected_product_ids || [];
-        const exists = currentIds.includes(productId);
-        const newIds = exists
-          ? currentIds.filter((id) => id !== productId)
-          : [...currentIds, productId];
-        return { ...sec, selected_product_ids: newIds };
-      };
-
-      if (sectionKey === "trending") {
-        return { ...prev, trending: updateSection(prev.trending) };
-      }
-      if (sectionKey === "popular") {
-        return { ...prev, popular: updateSection(prev.popular) };
-      }
-      if (sectionKey === "ethnic") {
-        return { ...prev, ethnic: updateSection(prev.ethnic) };
-      }
-      if (sectionKey === "flash_sale") {
-        return { ...prev, flash_sale: updateSection(prev.flash_sale) };
-      }
-
-      // Check extra sections
-      const extras = prev.extra_sections.map((es) =>
-        es.key === sectionKey || es.id === sectionKey ? updateSection(es) : es,
-      );
-      return { ...prev, extra_sections: extras };
-    });
-  };
-
-  const getTargetSection = (key: string | null): ProductSectionConfig | null => {
-    if (!key) return null;
-    if (key === "trending") return config.trending;
-    if (key === "popular") return config.popular;
-    if (key === "ethnic") return config.ethnic;
-    if (key === "flash_sale") return config.flash_sale;
-    return config.extra_sections.find((s) => s.key === key || s.id === key) || null;
   };
 
   if (loading) {
@@ -244,7 +381,9 @@ export default function AdminHomepageStudioPage() {
       <AdminShell>
         <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-sale" />
-          <p className="text-sm font-medium text-muted-foreground">Loading Homepage Customizer...</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {lang === "bn" ? "হোমপেজ সেটিংস লোড হচ্ছে..." : "Loading Homepage Customizer..."}
+          </p>
         </div>
       </AdminShell>
     );
@@ -261,22 +400,42 @@ export default function AdminHomepageStudioPage() {
                 <LayoutDashboard className="h-5 w-5" />
               </span>
               <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                Homepage Customizer &amp; Sections
+                {t.pageTitle}
               </h1>
             </div>
-            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-              Configure homepage sections, categories, advertisements, trending layouts, and featured products.
-            </p>
+            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{t.pageDesc}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Language Switcher Button (Strict single language) */}
+            <div className="inline-flex items-center rounded-lg border border-border bg-card p-0.5">
+              <button
+                type="button"
+                onClick={() => setLang("en")}
+                className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                  lang === "en" ? "bg-sale text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("bn")}
+                className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                  lang === "bn" ? "bg-sale text-white shadow-xs" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                বাংলা
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={handleReset}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              Reset
+              {t.resetBtn}
             </button>
 
             <Link
@@ -285,7 +444,7 @@ export default function AdminHomepageStudioPage() {
               className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition hover:border-sale"
             >
               <Eye className="h-3.5 w-3.5" />
-              Preview Store
+              {t.previewBtn}
             </Link>
 
             <button
@@ -295,59 +454,82 @@ export default function AdminHomepageStudioPage() {
               className="inline-flex h-9 items-center gap-2 rounded-lg bg-sale px-4 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:bg-sale/90 disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save All Changes
+              {saving ? t.savingBtn : t.saveBtn}
             </button>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex gap-2 overflow-x-auto border-b border-border pb-2 [scrollbar-width:none]">
-          <TabButton
-            active={activeTab === "categories"}
-            onClick={() => setActiveTab("categories")}
-            icon={<Layers className="h-4 w-4" />}
-            label="Shop by Categories"
-            badge={config.categories.enabled ? "Active" : "Off"}
-            badgeTone={config.categories.enabled ? "green" : "gray"}
-          />
-          <TabButton
-            active={activeTab === "promo_strip"}
-            onClick={() => setActiveTab("promo_strip")}
-            icon={<Megaphone className="h-4 w-4" />}
-            label="Advertisements (বিজ্ঞাপন)"
-            badge={`${config.promo_strip.items.filter((i) => i.is_active).length} Ads`}
-            badgeTone={config.promo_strip.enabled ? "blue" : "gray"}
-          />
-          <TabButton
-            active={activeTab === "trending"}
-            onClick={() => setActiveTab("trending")}
-            icon={<Flame className="h-4 w-4" />}
-            label="Trending Now"
-            badge={config.trending.is_active ? config.trending.layout : "Off"}
-            badgeTone={config.trending.is_active ? "amber" : "gray"}
-          />
-          <TabButton
-            active={activeTab === "mid_banner"}
-            onClick={() => setActiveTab("mid_banner")}
-            icon={<ImageIcon className="h-4 w-4" />}
-            label="Promo Banner (বিজ্ঞাপন ব্যানার)"
-            badge={config.mid_banner.enabled ? "Active" : "Off"}
-            badgeTone={config.mid_banner.enabled ? "green" : "gray"}
-          />
-          <TabButton
-            active={activeTab === "popular"}
-            onClick={() => setActiveTab("popular")}
-            icon={<Star className="h-4 w-4" />}
-            label="Most Popular Products"
-            badge={config.popular.is_active ? config.popular.layout : "Off"}
-            badgeTone={config.popular.is_active ? "green" : "gray"}
-          />
-          <TabButton
-            active={activeTab === "extra_sections"}
-            onClick={() => setActiveTab("extra_sections")}
-            icon={<Boxes className="h-4 w-4" />}
-            label="More Sections"
-          />
+        {/* Scrollable Tabs Container with Left & Right Nav Buttons */}
+        <div className="relative flex items-center">
+          <button
+            type="button"
+            aria-label="Scroll tabs left"
+            onClick={() => scrollTabs("left")}
+            className="absolute left-0 z-10 grid h-8 w-8 -translate-x-2 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm transition hover:bg-sale hover:text-white"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          <div
+            ref={tabsScrollRef}
+            className="flex gap-2 overflow-x-auto px-6 py-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full"
+          >
+            <TabButton
+              active={activeTab === "categories"}
+              onClick={() => setActiveTab("categories")}
+              icon={<Layers className="h-4 w-4" />}
+              label={t.tabs.categories}
+              badge={config.categories.enabled ? t.status.active : t.status.off}
+              badgeTone={config.categories.enabled ? "green" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "promo_strip"}
+              onClick={() => setActiveTab("promo_strip")}
+              icon={<Megaphone className="h-4 w-4" />}
+              label={t.tabs.promo_strip}
+              badge={`${config.promo_strip.items.filter((i) => i.is_active).length}`}
+              badgeTone={config.promo_strip.enabled ? "blue" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "trending"}
+              onClick={() => setActiveTab("trending")}
+              icon={<Flame className="h-4 w-4" />}
+              label={t.tabs.trending}
+              badge={config.trending.is_active ? t.status.active : t.status.off}
+              badgeTone={config.trending.is_active ? "amber" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "mid_banner"}
+              onClick={() => setActiveTab("mid_banner")}
+              icon={<ImageIcon className="h-4 w-4" />}
+              label={t.tabs.mid_banner}
+              badge={config.mid_banner.enabled ? t.status.active : t.status.off}
+              badgeTone={config.mid_banner.enabled ? "green" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "popular"}
+              onClick={() => setActiveTab("popular")}
+              icon={<Star className="h-4 w-4" />}
+              label={t.tabs.popular}
+              badge={config.popular.is_active ? t.status.active : t.status.off}
+              badgeTone={config.popular.is_active ? "green" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "extra_sections"}
+              onClick={() => setActiveTab("extra_sections")}
+              icon={<Boxes className="h-4 w-4" />}
+              label={t.tabs.extra_sections}
+            />
+          </div>
+
+          <button
+            type="button"
+            aria-label="Scroll tabs right"
+            onClick={() => scrollTabs("right")}
+            className="absolute right-0 z-10 grid h-8 w-8 translate-x-2 place-items-center rounded-full border border-border bg-background/95 text-foreground shadow-sm transition hover:bg-sale hover:text-white"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
 
         {/* ========================================================================= */}
@@ -357,10 +539,8 @@ export default function AdminHomepageStudioPage() {
           <div className="space-y-6 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
               <div>
-                <h2 className="text-lg font-bold text-foreground">Category by Shop Management</h2>
-                <p className="text-xs text-muted-foreground">
-                  Enable/disable category section, choose display style, select all or handpick categories.
-                </p>
+                <h2 className="text-lg font-bold text-foreground">{t.categories.title}</h2>
+                <p className="text-xs text-muted-foreground">{t.categories.desc}</p>
               </div>
 
               {/* Section Enable Toggle */}
@@ -377,7 +557,7 @@ export default function AdminHomepageStudioPage() {
                   className="peer sr-only"
                 />
                 <span className="text-xs sm:text-sm font-semibold text-foreground">
-                  {config.categories.enabled ? "Section Enabled" : "Section Disabled"}
+                  {config.categories.enabled ? t.status.enabled : t.status.disabled}
                 </span>
                 <div className="h-6 w-11 rounded-full bg-muted transition peer-checked:bg-sale peer-focus:outline-none after:absolute after:right-[23px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
               </label>
@@ -389,7 +569,7 @@ export default function AdminHomepageStudioPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs font-semibold text-foreground mb-1.5">
-                      Section Title (হোমপেজ হেডিং)
+                      {t.categories.headingLabel}
                     </label>
                     <input
                       type="text"
@@ -407,7 +587,7 @@ export default function AdminHomepageStudioPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-foreground mb-1.5">
-                      Category Display Mode (সিলেকশন মোড)
+                      {t.categories.modeLabel}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -424,7 +604,7 @@ export default function AdminHomepageStudioPage() {
                             : "border-border bg-background text-muted-foreground hover:bg-secondary"
                         }`}
                       >
-                        All Categories
+                        {t.categories.modeAll}
                       </button>
                       <button
                         type="button"
@@ -440,16 +620,16 @@ export default function AdminHomepageStudioPage() {
                             : "border-border bg-background text-muted-foreground hover:bg-secondary"
                         }`}
                       >
-                        Selected Categories Only
+                        {t.categories.modeSelected}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Layout Selector */}
+                {/* Layout Selector with Wireframes */}
                 <div>
                   <label className="block text-xs font-semibold text-foreground mb-2">
-                    Layout Style (ক্যাটাগরি প্রদর্শনের স্টাইল)
+                    {t.categories.layoutLabel}
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
@@ -486,11 +666,11 @@ export default function AdminHomepageStudioPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-xs font-semibold text-foreground">
-                      Categories ON/OFF &amp; Selection (ক্যাটাগরি অন-অফ নিয়ন্ত্রণ)
+                      {t.categories.listLabel}
                     </label>
                     <span className="text-xs text-muted-foreground">
                       {config.categories.items.filter((c) => c.is_active).length} of{" "}
-                      {config.categories.items.length} enabled
+                      {config.categories.items.length} {t.status.itemsEnabled}
                     </span>
                   </div>
 
@@ -543,7 +723,7 @@ export default function AdminHomepageStudioPage() {
                                 : "bg-muted text-muted-foreground hover:bg-secondary"
                             }`}
                           >
-                            {cat.is_active ? "Enabled" : "Disabled"}
+                            {cat.is_active ? t.status.active : t.status.off}
                           </button>
                         </div>
                       );
@@ -556,18 +736,14 @@ export default function AdminHomepageStudioPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 2: PROMO ADVERTISEMENTS (বিজ্ঞাপন STRIP)                                */}
+        {/* TAB 2: PROMO ADVERTISEMENTS                                                */}
         {/* ========================================================================= */}
         {activeTab === "promo_strip" && (
           <div className="space-y-6 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
               <div>
-                <h2 className="text-lg font-bold text-foreground">
-                  Advertisements Strip (বিজ্ঞাপন নিয়ন্ত্রণ)
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Control promotional ad cards with custom text, images, badges, links, and multiple advertisements.
-                </p>
+                <h2 className="text-lg font-bold text-foreground">{t.promo.title}</h2>
+                <p className="text-xs text-muted-foreground">{t.promo.desc}</p>
               </div>
 
               <div className="flex items-center gap-3">
@@ -577,10 +753,10 @@ export default function AdminHomepageStudioPage() {
                     const newId = `promo-${Date.now()}`;
                     const newAd: PromoAdItem = {
                       id: newId,
-                      title: "New Promotional Offer",
-                      tag: "Special",
+                      title: lang === "bn" ? "নতুন আকর্ষণীয় অফার" : "Special Season Offer",
+                      tag: lang === "bn" ? "স্পেশাল" : "Winter",
                       badge: "2026",
-                      description: "Available in store & online",
+                      description: lang === "bn" ? "অনলাইন ও স্টোরে উপলব্ধ" : "Available in store & online",
                       image: "",
                       link: "/categories",
                       bg_color: "bg-brand-blush",
@@ -596,7 +772,7 @@ export default function AdminHomepageStudioPage() {
                   }}
                   className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-sale px-3 text-xs font-semibold text-white shadow-sm hover:bg-sale/90"
                 >
-                  <Plus className="h-4 w-4" /> Add Advertisement
+                  <Plus className="h-4 w-4" /> {t.promo.addBtn}
                 </button>
 
                 {/* Section Toggle */}
@@ -620,9 +796,7 @@ export default function AdminHomepageStudioPage() {
             {config.promo_strip.enabled && (
               <div className="space-y-4">
                 {config.promo_strip.items.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    No advertisements added yet. Click &quot;Add Advertisement&quot; to create one.
-                  </p>
+                  <p className="py-8 text-center text-sm text-muted-foreground">{t.promo.noAds}</p>
                 ) : (
                   config.promo_strip.items.map((ad, idx) => (
                     <div
@@ -635,7 +809,7 @@ export default function AdminHomepageStudioPage() {
                             {idx + 1}
                           </span>
                           <span className="font-semibold text-sm text-foreground">
-                            {ad.title || "Untitled Ad"}
+                            {ad.title || "Untitled"}
                           </span>
                         </div>
 
@@ -658,13 +832,13 @@ export default function AdminHomepageStudioPage() {
                                 : "bg-muted text-muted-foreground"
                             }`}
                           >
-                            {ad.is_active ? "Active" : "Hidden"}
+                            {ad.is_active ? t.status.active : t.status.off}
                           </button>
 
                           <button
                             type="button"
                             onClick={() => {
-                              if (window.confirm("Delete this advertisement?")) {
+                              if (window.confirm(t.toasts.deleteConfirm)) {
                                 setConfig((prev) => ({
                                   ...prev,
                                   promo_strip: {
@@ -685,7 +859,7 @@ export default function AdminHomepageStudioPage() {
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Main Title (বিজ্ঞাপনের মূল শিরোনাম)
+                            {t.promo.mainTitle}
                           </label>
                           <input
                             type="text"
@@ -699,13 +873,12 @@ export default function AdminHomepageStudioPage() {
                               });
                             }}
                             className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                            placeholder="Exclusive for Man"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Script / Eyebrow Tag (ট্যাগ টেক্সট)
+                            {t.promo.tagText}
                           </label>
                           <input
                             type="text"
@@ -719,13 +892,12 @@ export default function AdminHomepageStudioPage() {
                               });
                             }}
                             className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                            placeholder="Winter / Eid Special"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Badge / Year (ব্যাজ টেক্সট)
+                            {t.promo.badgeText}
                           </label>
                           <input
                             type="text"
@@ -739,13 +911,12 @@ export default function AdminHomepageStudioPage() {
                               });
                             }}
                             className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                            placeholder="2026-27 / Flat 30% OFF"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Target Link (ক্লিক করলে যেখানে যাবে)
+                            {t.promo.linkText}
                           </label>
                           <input
                             type="text"
@@ -759,13 +930,12 @@ export default function AdminHomepageStudioPage() {
                               });
                             }}
                             className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                            placeholder="/categories?category=Men"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Background Color / Theme (ব্যাকগ্রাউন্ড কালার)
+                            {t.promo.bgText}
                           </label>
                           <select
                             value={ad.bg_color}
@@ -779,9 +949,9 @@ export default function AdminHomepageStudioPage() {
                             }}
                             className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
                           >
-                            {TINTS.map((t) => (
-                              <option key={t.value} value={t.value}>
-                                {t.label}
+                            {TINTS.map((tint) => (
+                              <option key={tint.value} value={tint.value}>
+                                {tint.label}
                               </option>
                             ))}
                           </select>
@@ -789,7 +959,7 @@ export default function AdminHomepageStudioPage() {
 
                         <div>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            Subtitle / Description Note
+                            {t.promo.descText}
                           </label>
                           <input
                             type="text"
@@ -803,15 +973,14 @@ export default function AdminHomepageStudioPage() {
                               });
                             }}
                             className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                            placeholder="Available in store & online"
                           />
                         </div>
                       </div>
 
-                      {/* Image Upload / URL */}
+                      {/* Image Upload */}
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                          Ad Image (বিজ্ঞাপনের ছবি আপলোড বা URL)
+                          {t.promo.imageLabel}
                         </label>
                         <ImageUploader
                           value={ad.image}
@@ -822,7 +991,7 @@ export default function AdminHomepageStudioPage() {
                               return { ...prev, promo_strip: { ...prev.promo_strip, items } };
                             });
                           }}
-                          label="Upload Promo Image"
+                          label={t.promo.uploadBtn}
                         />
                       </div>
                     </div>
@@ -834,35 +1003,28 @@ export default function AdminHomepageStudioPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: TRENDING NOW (TRENDY NOW)                                           */}
+        {/* TAB 3: TRENDING NOW                                                        */}
         {/* ========================================================================= */}
         {activeTab === "trending" && (
           <SectionConfigEditor
-            title="Trending Now Section (ট্রেন্ডিং প্রোডাক্ট)"
-            description="Configure section header, choose from 5 display styles (including horizontal scroll and 3-column grid), and handpick products."
+            lang={lang}
+            t={t}
+            title={t.tabs.trending}
             section={config.trending}
             onUpdate={(updated) => setConfig((prev) => ({ ...prev, trending: updated }))}
-            onOpenPicker={() => {
-              setPickerTarget("trending");
-              setPickerOpen(true);
-            }}
             availableProducts={availableProducts}
           />
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 4: MID-PAGE PROMO BANNER (বিজ্ঞাপন ব্যানার)                             */}
+        {/* TAB 4: MID-PAGE BANNER                                                     */}
         {/* ========================================================================= */}
         {activeTab === "mid_banner" && (
           <div className="space-y-6 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
               <div>
-                <h2 className="text-lg font-bold text-foreground">
-                  Mid-Page Promo Banner (বিজ্ঞাপন ব্যানার)
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Change or add mid-page callout banner with image, headline, button, and text alignments.
-                </p>
+                <h2 className="text-lg font-bold text-foreground">{t.midBanner.title}</h2>
+                <p className="text-xs text-muted-foreground">{t.midBanner.desc}</p>
               </div>
 
               {/* Section Toggle */}
@@ -892,7 +1054,7 @@ export default function AdminHomepageStudioPage() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          Tag / Eyebrow Text (যেমন: Winter)
+                          {t.midBanner.tagLabel}
                         </label>
                         <input
                           type="text"
@@ -912,7 +1074,7 @@ export default function AdminHomepageStudioPage() {
 
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          Headline Title (যেমন: Collection)
+                          {t.midBanner.headlineLabel}
                         </label>
                         <input
                           type="text"
@@ -932,7 +1094,7 @@ export default function AdminHomepageStudioPage() {
 
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          Button Text (বাটন টেক্সট)
+                          {t.midBanner.buttonLabel}
                         </label>
                         <input
                           type="text"
@@ -952,7 +1114,7 @@ export default function AdminHomepageStudioPage() {
 
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          Button Link (বাটন লিংক)
+                          {t.midBanner.linkLabel}
                         </label>
                         <input
                           type="text"
@@ -972,7 +1134,7 @@ export default function AdminHomepageStudioPage() {
 
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          Text Alignment (টেক্সটের পজিশন)
+                          {t.midBanner.alignLabel}
                         </label>
                         <select
                           value={b.align}
@@ -986,15 +1148,15 @@ export default function AdminHomepageStudioPage() {
                           }}
                           className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
                         >
-                          <option value="right">Right Aligned (ডান পাশে)</option>
-                          <option value="left">Left Aligned (বাম পাশে)</option>
-                          <option value="center">Centered (মাঝখানে)</option>
+                          <option value="right">{t.midBanner.alignRight}</option>
+                          <option value="left">{t.midBanner.alignLeft}</option>
+                          <option value="center">{t.midBanner.alignCenter}</option>
                         </select>
                       </div>
 
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          Description (বিবরণ)
+                          {t.midBanner.descLabel}
                         </label>
                         <input
                           type="text"
@@ -1008,7 +1170,6 @@ export default function AdminHomepageStudioPage() {
                             });
                           }}
                           className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          placeholder="Insulated layers, heavy knits and weather-ready outerwear."
                         />
                       </div>
                     </div>
@@ -1016,7 +1177,7 @@ export default function AdminHomepageStudioPage() {
                     {/* Banner Image Uploader */}
                     <div>
                       <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                        Banner Image (ব্যানার ছবি আপলোড বা URL)
+                        {t.midBanner.imageLabel}
                       </label>
                       <ImageUploader
                         value={b.image}
@@ -1027,7 +1188,7 @@ export default function AdminHomepageStudioPage() {
                             return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
                           });
                         }}
-                        label="Upload Banner Image"
+                        label={t.midBanner.uploadBtn}
                       />
                     </div>
                   </div>
@@ -1042,203 +1203,95 @@ export default function AdminHomepageStudioPage() {
         {/* ========================================================================= */}
         {activeTab === "popular" && (
           <SectionConfigEditor
-            title="Most Popular Products Section (জনপ্রিয় প্রোডাক্ট)"
-            description="Toggle section, choose from 5 display styles, and handpick popular products."
+            lang={lang}
+            t={t}
+            title={t.tabs.popular}
             section={config.popular}
             onUpdate={(updated) => setConfig((prev) => ({ ...prev, popular: updated }))}
-            onOpenPicker={() => {
-              setPickerTarget("popular");
-              setPickerOpen(true);
-            }}
             availableProducts={availableProducts}
           />
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 6: MORE SECTIONS (Ethnic, Flash Sale, Custom)                         */}
+        {/* TAB 6: MORE SECTIONS                                                       */}
         {/* ========================================================================= */}
         {activeTab === "extra_sections" && (
           <div className="space-y-6">
             <SectionConfigEditor
-              title="Ethnic Collection Section"
-              description="Configure ethnic collection products and display style."
+              lang={lang}
+              t={t}
+              title={lang === "bn" ? "এথনিক কালেকশন সেকশন" : "Ethnic Collection Section"}
               section={config.ethnic}
               onUpdate={(updated) => setConfig((prev) => ({ ...prev, ethnic: updated }))}
-              onOpenPicker={() => {
-                setPickerTarget("ethnic");
-                setPickerOpen(true);
-              }}
               availableProducts={availableProducts}
             />
 
             <SectionConfigEditor
-              title="Flash Sale Section"
-              description="Configure flash sale showcase section."
+              lang={lang}
+              t={t}
+              title={lang === "bn" ? "ফ্ল্যাশ সেল সেকশন" : "Flash Sale Section"}
               section={config.flash_sale}
               onUpdate={(updated) => setConfig((prev) => ({ ...prev, flash_sale: updated }))}
-              onOpenPicker={() => {
-                setPickerTarget("flash_sale");
-                setPickerOpen(true);
-              }}
               availableProducts={availableProducts}
             />
           </div>
         )}
       </div>
-
-      {/* ========================================================================= */}
-      {/* PRODUCT PICKER MODAL                                                      */}
-      {/* ========================================================================= */}
-      {pickerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-2xl border border-border bg-card shadow-2xl">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-border p-4 sm:p-5">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-foreground">
-                  Select Products for{" "}
-                  <span className="text-sale">
-                    {getTargetSection(pickerTarget)?.name || "Section"}
-                  </span>
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Check items to show in this section. Handpicked products will display in the chosen layout.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPickerOpen(false)}
-                className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Search filter */}
-            <div className="border-b border-border p-3 sm:p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={pickerSearch}
-                  onChange={(e) => setPickerSearch(e.target.value)}
-                  placeholder="Search products by name or category..."
-                  className="h-10 w-full rounded-xl border border-border bg-background pl-9 pr-4 text-xs sm:text-sm outline-none focus:border-sale"
-                />
-              </div>
-            </div>
-
-            {/* Product list */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {availableProducts
-                  .filter(
-                    (p) =>
-                      !pickerSearch ||
-                      p.name.toLowerCase().includes(pickerSearch.toLowerCase()) ||
-                      p.category?.toLowerCase().includes(pickerSearch.toLowerCase()),
-                  )
-                  .map((product) => {
-                    const targetSec = getTargetSection(pickerTarget);
-                    const isSelected =
-                      targetSec?.selected_product_ids?.includes(product.id) || false;
-
-                    return (
-                      <div
-                        key={product.id}
-                        onClick={() => {
-                          if (pickerTarget) {
-                            toggleProductSelection(pickerTarget, product.id);
-                          }
-                        }}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-2.5 transition ${
-                          isSelected
-                            ? "border-sale bg-sale/5 shadow-sm"
-                            : "border-border bg-background hover:bg-secondary/40"
-                        }`}
-                      >
-                        <div
-                          className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border ${
-                            isSelected
-                              ? "border-sale bg-sale text-white"
-                              : "border-muted-foreground/40 bg-background"
-                          }`}
-                        >
-                          {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
-                        </div>
-
-                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <h4 className="truncate text-xs font-semibold text-foreground">
-                            {product.name}
-                          </h4>
-                          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <span>{product.category || "General"}</span>
-                            <span>•</span>
-                            <span className="font-semibold text-sale">৳{product.price}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-between border-t border-border p-4 bg-muted/20">
-              <span className="text-xs text-muted-foreground">
-                Selected:{" "}
-                <strong className="text-foreground">
-                  {getTargetSection(pickerTarget)?.selected_product_ids?.length || 0}
-                </strong>{" "}
-                products
-              </span>
-              <button
-                type="button"
-                onClick={() => setPickerOpen(false)}
-                className="rounded-lg bg-sale px-5 py-2 text-xs font-semibold text-white shadow hover:bg-sale/90"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </AdminShell>
   );
 }
 
 /* ========================================================================= */
-/* REUSABLE SECTION CONFIG EDITOR COMPONENT                                   */
+/* COMPREHENSIVE SECTION CONFIG EDITOR WITH WIREFRAME PREVIEWS & DIRECT PICKER*/
 /* ========================================================================= */
 function SectionConfigEditor({
+  lang,
+  t,
   title,
-  description,
   section,
   onUpdate,
-  onOpenPicker,
   availableProducts,
 }: {
+  lang: Lang;
+  t: (typeof DICT)["en"];
   title: string;
-  description: string;
   section: ProductSectionConfig;
   onUpdate: (updated: ProductSectionConfig) => void;
-  onOpenPicker: () => void;
   availableProducts: Product[];
 }) {
+  const [search, setSearch] = useState("");
+
+  const selectedIds = useMemo(() => section.selected_product_ids || [], [section.selected_product_ids]);
+
+  const toggleProduct = (productId: string) => {
+    const exists = selectedIds.includes(productId);
+    const newIds = exists ? selectedIds.filter((id) => id !== productId) : [...selectedIds, productId];
+    // If user picks a product, automatically switch source to 'selected'
+    onUpdate({
+      ...section,
+      source: "selected",
+      selected_product_ids: newIds,
+    });
+  };
+
+  const removeProduct = (productId: string) => {
+    onUpdate({
+      ...section,
+      selected_product_ids: selectedIds.filter((id) => id !== productId),
+    });
+  };
+
   return (
     <div className="space-y-6 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
+      {/* Header and Toggle */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
         <div>
           <h2 className="text-lg font-bold text-foreground">{title}</h2>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-xs text-muted-foreground">
+            {lang === "bn"
+              ? "৫টি ভিজ্যুয়াল স্টাইল থেকে পছন্দ করুন এবং স্টোরের প্রোডাক্ট সরাসরি নির্বাচন করুন।"
+              : "Choose from 5 visual layout styles and select products directly from your catalog."}
+          </p>
         </div>
 
         {/* Section Enable Toggle */}
@@ -1250,7 +1303,7 @@ function SectionConfigEditor({
             className="peer sr-only"
           />
           <span className="text-xs sm:text-sm font-semibold text-foreground">
-            {section.is_active ? "Section Enabled" : "Section Disabled"}
+            {section.is_active ? t.status.enabled : t.status.disabled}
           </span>
           <div className="h-6 w-11 rounded-full bg-muted transition peer-checked:bg-sale peer-focus:outline-none after:absolute after:right-[23px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
         </label>
@@ -1262,33 +1315,31 @@ function SectionConfigEditor({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1">
-                Section Heading (শিরোনাম)
+                {t.sections.headingLabel}
               </label>
               <input
                 type="text"
                 value={section.name}
                 onChange={(e) => onUpdate({ ...section, name: e.target.value })}
                 className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-sale"
-                placeholder="Trending Now"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1">
-                Action Button Text (বাটন টেক্সট)
+                {t.sections.actionLabel}
               </label>
               <input
                 type="text"
                 value={section.action_label || ""}
                 onChange={(e) => onUpdate({ ...section, action_label: e.target.value })}
                 className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-sale"
-                placeholder="View all"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1">
-                Max Products to Show (সর্বোচ্চ প্রোডাক্ট সংখ্যা)
+                {t.sections.maxLabel}
               </label>
               <input
                 type="number"
@@ -1301,56 +1352,152 @@ function SectionConfigEditor({
             </div>
           </div>
 
-          {/* 3-4 Layout Styles requested by user */}
+          {/* ================================================================= */}
+          {/* VISUAL WIREFRAME PREVIEWS FOR LAYOUT STYLES                       */}
+          {/* ================================================================= */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <label className="text-xs font-semibold text-foreground">
-                Display Style &amp; Layout (প্রদর্শনের স্টাইল নির্বাচন করুন)
+                {t.sections.layoutLabel}
               </label>
               <span className="text-xs font-bold text-sale uppercase tracking-wider">
-                Active Style: {section.layout}
+                {t.sections.activeStyle}: {section.layout}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {LAYOUT_OPTIONS.map((lo) => (
-                <button
-                  key={lo.id}
-                  type="button"
-                  onClick={() => onUpdate({ ...section, layout: lo.id })}
-                  className={`flex flex-col items-start p-3.5 rounded-xl border text-left transition ${
-                    section.layout === lo.id
-                      ? "border-sale bg-sale/5 shadow-sm ring-1 ring-sale"
-                      : "border-border bg-background hover:bg-secondary/40"
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-xs sm:text-sm font-bold text-foreground">
-                      {lo.label}
-                    </span>
-                    {section.layout === lo.id && (
-                      <span className="grid h-4 w-4 place-items-center rounded-full bg-sale text-white">
-                        <Check className="h-3 w-3 stroke-[3]" />
-                      </span>
-                    )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {/* 1. Carousel */}
+              <LayoutOptionCard
+                active={section.layout === "carousel"}
+                onClick={() => onUpdate({ ...section, layout: "carousel" })}
+                title={t.layouts.carousel.label}
+                desc={t.layouts.carousel.desc}
+              >
+                <div className="flex items-center gap-1.5 overflow-hidden w-full py-2">
+                  <div className="h-11 w-1/4 rounded-lg bg-sale/20 border border-sale/40 shrink-0 flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-sale/50 rounded-xs" />
                   </div>
-                  <span className="mt-1 text-[11px] text-muted-foreground leading-snug">
-                    {lo.desc}
+                  <div className="h-11 w-1/4 rounded-lg bg-sale/20 border border-sale/40 shrink-0 flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-sale/50 rounded-xs" />
+                  </div>
+                  <div className="h-11 w-1/4 rounded-lg bg-sale/20 border border-sale/40 shrink-0 flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-sale/50 rounded-xs" />
+                  </div>
+                  <div className="h-11 w-1/4 rounded-lg bg-sale/20 border border-sale/40 shrink-0 flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-sale/50 rounded-xs" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between w-full text-[10px] text-sale font-semibold">
+                  <span>&larr; Swipe Scroll &rarr;</span>
+                  <span className="flex gap-1">
+                    <span className="h-1.5 w-3 rounded-full bg-sale" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
                   </span>
-                </button>
-              ))}
+                </div>
+              </LayoutOptionCard>
+
+              {/* 2. 3-Grid */}
+              <LayoutOptionCard
+                active={section.layout === "grid_3"}
+                onClick={() => onUpdate({ ...section, layout: "grid_3" })}
+                title={t.layouts.grid_3.label}
+                desc={t.layouts.grid_3.desc}
+              >
+                <div className="grid grid-cols-3 gap-1.5 w-full py-2">
+                  <div className="h-11 rounded-lg bg-muted border border-border flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-muted-foreground/30 rounded-xs" />
+                  </div>
+                  <div className="h-11 rounded-lg bg-muted border border-border flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-muted-foreground/30 rounded-xs" />
+                  </div>
+                  <div className="h-11 rounded-lg bg-muted border border-border flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-muted-foreground/30 rounded-xs" />
+                  </div>
+                </div>
+              </LayoutOptionCard>
+
+              {/* 3. 4-Grid */}
+              <LayoutOptionCard
+                active={section.layout === "grid_4"}
+                onClick={() => onUpdate({ ...section, layout: "grid_4" })}
+                title={t.layouts.grid_4.label}
+                desc={t.layouts.grid_4.desc}
+              >
+                <div className="grid grid-cols-4 gap-1.5 w-full py-2">
+                  <div className="h-11 rounded-lg bg-muted border border-border flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-muted-foreground/30 rounded-xs" />
+                  </div>
+                  <div className="h-11 rounded-lg bg-muted border border-border flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-muted-foreground/30 rounded-xs" />
+                  </div>
+                  <div className="h-11 rounded-lg bg-muted border border-border flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-muted-foreground/30 rounded-xs" />
+                  </div>
+                  <div className="h-11 rounded-lg bg-muted border border-border flex flex-col justify-end p-1">
+                    <div className="h-1.5 w-full bg-muted-foreground/30 rounded-xs" />
+                  </div>
+                </div>
+              </LayoutOptionCard>
+
+              {/* 4. Featured Hero */}
+              <LayoutOptionCard
+                active={section.layout === "featured"}
+                onClick={() => onUpdate({ ...section, layout: "featured" })}
+                title={t.layouts.featured.label}
+                desc={t.layouts.featured.desc}
+              >
+                <div className="grid grid-cols-5 gap-1.5 w-full py-2">
+                  <div className="col-span-2 h-14 rounded-lg bg-sale/15 border-2 border-sale/60 flex flex-col justify-between p-1">
+                    <span className="text-[8px] font-bold text-sale uppercase tracking-wider">HERO</span>
+                    <div className="h-1.5 w-3/4 bg-sale/50 rounded-xs" />
+                  </div>
+                  <div className="col-span-3 grid grid-cols-2 gap-1 h-14">
+                    <div className="h-6 rounded bg-muted border border-border" />
+                    <div className="h-6 rounded bg-muted border border-border" />
+                    <div className="h-6 rounded bg-muted border border-border" />
+                    <div className="h-6 rounded bg-muted border border-border" />
+                  </div>
+                </div>
+              </LayoutOptionCard>
+
+              {/* 5. Two Column */}
+              <LayoutOptionCard
+                active={section.layout === "two_column"}
+                onClick={() => onUpdate({ ...section, layout: "two_column" })}
+                title={t.layouts.two_column.label}
+                desc={t.layouts.two_column.desc}
+              >
+                <div className="grid grid-cols-2 gap-1.5 w-full py-2">
+                  <div className="h-11 rounded-lg bg-muted border border-border flex items-center p-1 gap-1.5">
+                    <div className="h-8 w-8 rounded bg-muted-foreground/20 shrink-0" />
+                    <div className="flex-1 space-y-1">
+                      <div className="h-1.5 w-full bg-muted-foreground/30 rounded" />
+                      <div className="h-1.5 w-1/2 bg-muted-foreground/20 rounded" />
+                    </div>
+                  </div>
+                  <div className="h-11 rounded-lg bg-muted border border-border flex items-center p-1 gap-1.5">
+                    <div className="h-8 w-8 rounded bg-muted-foreground/20 shrink-0" />
+                    <div className="flex-1 space-y-1">
+                      <div className="h-1.5 w-full bg-muted-foreground/30 rounded" />
+                      <div className="h-1.5 w-1/2 bg-muted-foreground/20 rounded" />
+                    </div>
+                  </div>
+                </div>
+              </LayoutOptionCard>
             </div>
           </div>
 
-          {/* Product Source & Selection */}
-          <div className="rounded-xl border border-border/80 bg-background p-4 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {/* ================================================================= */}
+          {/* DIRECT PRODUCT SELECTOR & HANDPICK SUITE                          */}
+          {/* ================================================================= */}
+          <div className="rounded-2xl border border-border bg-background p-4 sm:p-5 space-y-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-3">
               <div>
-                <h4 className="text-xs font-semibold text-foreground">
-                  Product Source (প্রোডাক্ট নির্বাচন পদ্ধতি)
-                </h4>
-                <p className="text-[11px] text-muted-foreground">
-                  Choose auto selection or pick custom products from store catalog.
+                <h3 className="text-sm font-bold text-foreground">{t.sections.sourceLabel}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {lang === "bn"
+                    ? "স্বয়ংক্রিয়ভাবে দেখাবেন নাকি নিজের পছন্দের প্রোডাক্ট নির্বাচন করবেন তা নির্ধারণ করুন।"
+                    : "Choose between automatic store display or handpicking specific items."}
                 </p>
               </div>
 
@@ -1358,87 +1505,152 @@ function SectionConfigEditor({
                 <button
                   type="button"
                   onClick={() => onUpdate({ ...section, source: "auto" })}
-                  className={`h-8 rounded-lg px-3 text-xs font-semibold transition ${
+                  className={`h-9 rounded-xl px-4 text-xs font-bold transition ${
                     section.source === "auto"
-                      ? "bg-sale text-white"
+                      ? "bg-sale text-white shadow-xs"
                       : "border border-border text-muted-foreground hover:bg-secondary"
                   }`}
                 >
-                  Auto / All
+                  {t.sections.sourceAuto}
                 </button>
                 <button
                   type="button"
                   onClick={() => onUpdate({ ...section, source: "selected" })}
-                  className={`h-8 rounded-lg px-3 text-xs font-semibold transition ${
+                  className={`h-9 rounded-xl px-4 text-xs font-bold transition ${
                     section.source === "selected"
-                      ? "bg-sale text-white"
+                      ? "bg-sale text-white shadow-xs"
                       : "border border-border text-muted-foreground hover:bg-secondary"
                   }`}
                 >
-                  Handpick Products
+                  {t.sections.sourceHandpick}
                 </button>
               </div>
             </div>
 
-            {section.source === "selected" && (
-              <div className="border-t border-border pt-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    Selected products:{" "}
-                    <strong className="text-foreground">
-                      {section.selected_product_ids?.length || 0}
-                    </strong>
-                  </span>
+            {/* Currently Selected Products Chips */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-foreground">
+                  {t.sections.selectedLabel} ({selectedIds.length} {t.status.selectedCount})
+                </span>
+                {selectedIds.length > 0 && (
                   <button
                     type="button"
-                    onClick={onOpenPicker}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-sale/10 px-3 py-1.5 text-xs font-semibold text-sale hover:bg-sale hover:text-white transition"
+                    onClick={() => onUpdate({ ...section, selected_product_ids: [] })}
+                    className="text-[11px] text-destructive hover:underline"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Select / Edit Products
+                    {lang === "bn" ? "সব মুছুন" : "Clear all"}
                   </button>
-                </div>
-
-                {/* Selected Products Preview Chips */}
-                {section.selected_product_ids && section.selected_product_ids.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {section.selected_product_ids.map((id) => {
-                      const prod = availableProducts.find((p) => p.id === id);
-                      return (
-                        <div
-                          key={id}
-                          className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1 text-xs"
-                        >
-                          {prod?.image && (
-                            <img
-                              src={prod.image}
-                              alt=""
-                              className="h-5 w-5 rounded object-cover"
-                            />
-                          )}
-                          <span className="font-medium text-foreground truncate max-w-[140px]">
-                            {prod?.name || id}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newIds = section.selected_product_ids?.filter((i) => i !== id);
-                              onUpdate({ ...section, selected_product_ids: newIds });
-                            }}
-                            className="text-muted-foreground hover:text-destructive"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                    No products selected yet. Click &quot;Select / Edit Products&quot; to pick products.
-                  </p>
                 )}
               </div>
-            )}
+
+              {selectedIds.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {selectedIds.map((id) => {
+                    const prod = availableProducts.find((p) => p.id === id);
+                    return (
+                      <div
+                        key={id}
+                        className="flex items-center gap-2 rounded-xl border border-sale/40 bg-sale/5 px-3 py-1.5 text-xs shadow-xs"
+                      >
+                        {prod?.image && (
+                          <img src={prod.image} alt="" className="h-5 w-5 rounded object-cover" />
+                        )}
+                        <span className="font-semibold text-foreground truncate max-w-[160px]">
+                          {prod?.name || id}
+                        </span>
+                        <span className="text-sale font-bold">৳{prod?.price || 0}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeProduct(id)}
+                          className="ml-1 text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
+                  {t.sections.noSelected}
+                </p>
+              )}
+            </div>
+
+            {/* Catalog Grid with Instant Search and Selection */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-foreground">
+                  {t.sections.availableTitle}
+                </span>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t.sections.searchPlaceholder}
+                  className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-xs sm:text-sm outline-none focus:border-sale shadow-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-[360px] overflow-y-auto p-1 [scrollbar-width:thin]">
+                {availableProducts
+                  .filter(
+                    (p) =>
+                      !search ||
+                      p.name.toLowerCase().includes(search.toLowerCase()) ||
+                      p.category?.toLowerCase().includes(search.toLowerCase()),
+                  )
+                  .map((product) => {
+                    const isSelected = selectedIds.includes(product.id);
+
+                    return (
+                      <div
+                        key={product.id}
+                        onClick={() => toggleProduct(product.id)}
+                        className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition ${
+                          isSelected
+                            ? "border-sale bg-sale/10 shadow-xs ring-1 ring-sale"
+                            : "border-border bg-card hover:border-sale/40 hover:bg-secondary/40"
+                        }`}
+                      >
+                        <div
+                          className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition ${
+                            isSelected
+                              ? "border-sale bg-sale text-white"
+                              : "border-muted-foreground/30 bg-background"
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                        </div>
+
+                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <h4 className="truncate text-xs font-semibold text-foreground">
+                            {product.name}
+                          </h4>
+                          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                            <span className="truncate max-w-[60px]">{product.category || "General"}</span>
+                            <span>•</span>
+                            <span className="font-bold text-sale">৳{product.price}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1446,6 +1658,52 @@ function SectionConfigEditor({
   );
 }
 
+/* ========================================================================= */
+/* WIREFRAME PREVIEW CARD HELPER                                              */
+/* ========================================================================= */
+function LayoutOptionCard({
+  active,
+  onClick,
+  title,
+  desc,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  desc: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-start p-3.5 rounded-2xl border text-left transition shadow-xs ${
+        active
+          ? "border-sale bg-sale/5 ring-2 ring-sale"
+          : "border-border bg-background hover:bg-secondary/40 hover:border-sale/30"
+      }`}
+    >
+      <div className="flex items-center justify-between w-full mb-1">
+        <span className="text-xs sm:text-sm font-bold text-foreground">{title}</span>
+        {active && (
+          <span className="grid h-4 w-4 place-items-center rounded-full bg-sale text-white shadow-xs">
+            <Check className="h-3 w-3 stroke-[3]" />
+          </span>
+        )}
+      </div>
+
+      {/* Wireframe Graphic */}
+      <div className="w-full my-1 rounded-xl bg-card border border-border/60 p-2">{children}</div>
+
+      <span className="mt-1 text-[11px] text-muted-foreground leading-tight">{desc}</span>
+    </button>
+  );
+}
+
+/* ========================================================================= */
+/* TAB BUTTON COMPONENT                                                      */
+/* ========================================================================= */
 function TabButton({
   active,
   onClick,
@@ -1474,7 +1732,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold transition ${
+      className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold transition whitespace-nowrap ${
         active
           ? "bg-sale text-white shadow-sm"
           : "border border-border bg-card text-foreground/80 hover:bg-secondary hover:text-foreground"
