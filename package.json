@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "push": "git add . && git commit -m \"Update\" && git push origin main",
+    "sync": "node scripts/auto-sync.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
