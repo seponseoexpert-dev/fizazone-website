@@ -41,28 +41,31 @@ export async function POST(req: Request) {
   try {
     const body: HomepageConfig = await req.json();
 
-    // 1. Write to local file so changes are committed to repo
+    // 1. Write to local file if writable (local dev environment)
     try {
       const dir = path.dirname(FILE_PATH);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(FILE_PATH, JSON.stringify(body, null, 2), "utf-8");
-    } catch (fsErr) {
-      console.error("Could not write to local file:", fsErr);
+    } catch {
+      // In read-only serverless environments like Vercel, writing to filesystem is safely ignored
     }
 
-    // 2. Also try writing to Supabase site_settings
+    // 2. Also try writing to Supabase site_settings via server admin client
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin
+      const { error } = await supabaseAdmin
         .from("site_settings")
         .upsert(
           { key: "homepage_config", value: body as never },
           { onConflict: "key" }
         );
+      if (error) {
+        console.warn("Supabase server upsert notice:", error.message);
+      }
     } catch (sbErr) {
-      console.error("Supabase upsert warning:", sbErr);
+      console.warn("Supabase server upsert exception:", sbErr);
     }
 
     return NextResponse.json({ success: true, data: body });

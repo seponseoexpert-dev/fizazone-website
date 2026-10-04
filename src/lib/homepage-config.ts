@@ -214,7 +214,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
 };
 
 export async function fetchHomepageConfig(): Promise<HomepageConfig> {
-  // 1. Direct Supabase read from site_settings (works in browser & server)
+  // 1. Direct Supabase read from site_settings (works in browser & server for all visitors)
   try {
     const { data, error } = await supabase
       .from("site_settings")
@@ -223,7 +223,18 @@ export async function fetchHomepageConfig(): Promise<HomepageConfig> {
       .maybeSingle();
 
     if (!error && data?.value && typeof data.value === "object" && Object.keys(data.value).length > 0) {
-      const merged = { ...DEFAULT_HOMEPAGE_CONFIG, ...(data.value as Partial<HomepageConfig>) };
+      const val = data.value as Partial<HomepageConfig>;
+      const merged: HomepageConfig = {
+        ...DEFAULT_HOMEPAGE_CONFIG,
+        ...val,
+        categories: { ...DEFAULT_HOMEPAGE_CONFIG.categories, ...(val.categories || {}) },
+        promo_strip: { ...DEFAULT_HOMEPAGE_CONFIG.promo_strip, ...(val.promo_strip || {}) },
+        trending: { ...DEFAULT_HOMEPAGE_CONFIG.trending, ...(val.trending || {}) },
+        mid_banner: { ...DEFAULT_HOMEPAGE_CONFIG.mid_banner, ...(val.mid_banner || {}) },
+        ethnic: { ...DEFAULT_HOMEPAGE_CONFIG.ethnic, ...(val.ethnic || {}) },
+        flash_sale: { ...DEFAULT_HOMEPAGE_CONFIG.flash_sale, ...(val.flash_sale || {}) },
+        popular: { ...DEFAULT_HOMEPAGE_CONFIG.popular, ...(val.popular || {}) },
+      };
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("fz_homepage_config", JSON.stringify(merged));
@@ -240,7 +251,20 @@ export async function fetchHomepageConfig(): Promise<HomepageConfig> {
     try {
       const cached = localStorage.getItem("fz_homepage_config");
       if (cached) {
-        return { ...DEFAULT_HOMEPAGE_CONFIG, ...JSON.parse(cached) };
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
+          return {
+            ...DEFAULT_HOMEPAGE_CONFIG,
+            ...parsed,
+            categories: { ...DEFAULT_HOMEPAGE_CONFIG.categories, ...(parsed.categories || {}) },
+            promo_strip: { ...DEFAULT_HOMEPAGE_CONFIG.promo_strip, ...(parsed.promo_strip || {}) },
+            trending: { ...DEFAULT_HOMEPAGE_CONFIG.trending, ...(parsed.trending || {}) },
+            mid_banner: { ...DEFAULT_HOMEPAGE_CONFIG.mid_banner, ...(parsed.mid_banner || {}) },
+            ethnic: { ...DEFAULT_HOMEPAGE_CONFIG.ethnic, ...(parsed.ethnic || {}) },
+            flash_sale: { ...DEFAULT_HOMEPAGE_CONFIG.flash_sale, ...(parsed.flash_sale || {}) },
+            popular: { ...DEFAULT_HOMEPAGE_CONFIG.popular, ...(parsed.popular || {}) },
+          };
+        }
       }
     } catch {}
   }
@@ -250,7 +274,19 @@ export async function fetchHomepageConfig(): Promise<HomepageConfig> {
     const res = await fetch("/api/homepage-settings", { cache: "no-store" });
     if (res.ok) {
       const json = await res.json();
-      return { ...DEFAULT_HOMEPAGE_CONFIG, ...json };
+      if (json && typeof json === "object" && Object.keys(json).length > 0) {
+        return {
+          ...DEFAULT_HOMEPAGE_CONFIG,
+          ...json,
+          categories: { ...DEFAULT_HOMEPAGE_CONFIG.categories, ...(json.categories || {}) },
+          promo_strip: { ...DEFAULT_HOMEPAGE_CONFIG.promo_strip, ...(json.promo_strip || {}) },
+          trending: { ...DEFAULT_HOMEPAGE_CONFIG.trending, ...(json.trending || {}) },
+          mid_banner: { ...DEFAULT_HOMEPAGE_CONFIG.mid_banner, ...(json.mid_banner || {}) },
+          ethnic: { ...DEFAULT_HOMEPAGE_CONFIG.ethnic, ...(json.ethnic || {}) },
+          flash_sale: { ...DEFAULT_HOMEPAGE_CONFIG.flash_sale, ...(json.flash_sale || {}) },
+          popular: { ...DEFAULT_HOMEPAGE_CONFIG.popular, ...(json.popular || {}) },
+        };
+      }
     }
   } catch {}
 
@@ -258,21 +294,14 @@ export async function fetchHomepageConfig(): Promise<HomepageConfig> {
 }
 
 export async function saveHomepageConfig(config: HomepageConfig): Promise<boolean> {
-  let saved = false;
-
   // 1. Direct Supabase upsert using current user session
-  try {
-    const { error } = await supabase
-      .from("site_settings")
-      .upsert({ key: "homepage_config", value: config as never }, { onConflict: "key" });
+  const { error } = await supabase
+    .from("site_settings")
+    .upsert({ key: "homepage_config", value: config as never }, { onConflict: "key" });
 
-    if (!error) {
-      saved = true;
-    } else {
-      console.warn("Direct site_settings upsert returned error:", error);
-    }
-  } catch (sbErr) {
-    console.warn("Direct site_settings upsert exception:", sbErr);
+  if (error) {
+    console.error("Supabase site_settings upsert error:", error);
+    throw new Error(error.message || "Failed to save homepage settings in Supabase");
   }
 
   // 2. Always persist in localStorage
@@ -282,7 +311,7 @@ export async function saveHomepageConfig(config: HomepageConfig): Promise<boolea
     } catch {}
   }
 
-  // 3. Also notify API route for server file sync
+  // 3. Also notify API route for server sync
   try {
     await fetch("/api/homepage-settings", {
       method: "POST",

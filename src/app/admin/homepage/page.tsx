@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@/components/ui/link";
 import {
   Boxes,
@@ -312,6 +314,8 @@ type ActiveTab =
   | "extra_sections";
 
 export default function AdminHomepageStudioPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
@@ -332,13 +336,36 @@ export default function AdminHomepageStudioPage() {
     }
   };
 
+  // 1. Auto-detect website language on mount to align with website language setting
+  useEffect(() => {
+    async function syncWebsiteLanguage() {
+      try {
+        const { data } = await supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "site")
+          .maybeSingle();
+
+        const siteVal = (data?.value ?? {}) as Record<string, unknown>;
+        const siteLang = (siteVal.default_language as string)?.toLowerCase();
+        if (siteLang === "bn" || siteLang === "bengali") {
+          setLang("bn");
+        } else if (siteLang === "en" || siteLang === "english") {
+          setLang("en");
+        }
+      } catch {}
+    }
+    void syncWebsiteLanguage();
+  }, []);
+
+  // 2. Load homepage configuration and available products
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const cfg = await fetchHomepageConfig();
       setConfig(cfg);
 
-      // Load products
+      // Load products from DB
       try {
         const { data: dbProducts } = await supabase
           .from("products")
@@ -378,31 +405,61 @@ export default function AdminHomepageStudioPage() {
     void loadData();
   }, [loadData]);
 
-  // Robust Save function that writes to Supabase, localStorage, and API
+  // Robust Save function that writes to Supabase, localStorage, and query cache
   const handleSave = async () => {
     setSaving(true);
     try {
-      // 1. Direct write to Supabase site_settings
+      // 1. Verify active session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error(
+          lang === "bn"
+            ? "আপনার অ্যাডমিন সেশন পাওয়া যায়নি। অনুগ্রহ করে পুনরায় লগইন করুন।"
+            : "No active admin session found. Please log in first."
+        );
+        router.push("/admin/login");
+        return;
+      }
+
+      // 2. Direct write to Supabase site_settings
       const { error: sbError } = await supabase
         .from("site_settings")
         .upsert({ key: "homepage_config", value: config as never }, { onConflict: "key" });
 
       if (sbError) {
-        console.warn("Supabase upsert warning:", sbError);
+        console.error("Supabase upsert error:", sbError);
+        throw new Error(
+          lang === "bn"
+            ? `ডাটাবেস সংরক্ষণ ত্রুটি: ${sbError.message}`
+            : `Database save error: ${sbError.message}`
+        );
       }
 
-      // 2. Persist in localStorage
+      // 3. Persist in localStorage as instant fallback
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("fz_homepage_config", JSON.stringify(config));
         } catch {}
       }
 
-      // 3. Save via helper
-      await saveHomepageConfig(config);
+      // 4. Update React Query cache so storefront and studio update immediately
+      queryClient.setQueryData(["homepage-config"], config);
+      queryClient.invalidateQueries({ queryKey: ["homepage-config"] });
+
+      // 5. Notify API route for server synchronization
+      try {
+        await fetch("/api/homepage-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(config),
+        });
+      } catch {}
 
       toast.success(t.toasts.saveSuccess);
     } catch (err: unknown) {
+      console.error("handleSave error:", err);
       const msg = err instanceof Error ? err.message : t.toasts.saveError;
       toast.error(msg);
     } finally {

@@ -12,11 +12,58 @@ import {
 } from "@/components/shop/Sections";
 import { BottomNav } from "@/components/shop/BottomNav";
 import { DynamicProductSection } from "@/components/shop/DynamicProductSection";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useHomepageConfig } from "@/lib/homepage-config";
-import { trendy, ethnic, popular, flashSale, allProducts } from "./data";
+import { trendy, ethnic, popular, flashSale, allProducts, type Product } from "./data";
 
 export function HomePage() {
   const { data: config } = useHomepageConfig();
+
+  // Load real products from Supabase database so selected products from Admin Studio match immediately
+  const { data: dbProducts } = useQuery({
+    queryKey: ["homepage-db-products"],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("id, name, slug, price, sale_price, images, category")
+          .limit(100);
+
+        if (error || !data || data.length === 0) return [];
+        return data.map((p) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          image: p.images?.[0] || allProducts[0]?.image || "",
+          price: p.sale_price ?? p.price,
+          oldPrice: p.sale_price ? p.price : undefined,
+          rating: 5,
+          category: p.category,
+          flash: Boolean(p.sale_price),
+        }));
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 30_000,
+  });
+
+  // Unified available product list combining DB products and fallbacks
+  const availableProductMap = useMemo(() => {
+    const map = new Map<string, Product>();
+    // 1. Add DB products first
+    for (const p of dbProducts ?? []) {
+      map.set(p.id, p);
+    }
+    // 2. Add local fallback products
+    for (const p of allProducts) {
+      if (!map.has(p.id)) {
+        map.set(p.id, p);
+      }
+    }
+    return map;
+  }, [dbProducts]);
 
   // Helper to resolve products for a section
   const getProductsForSection = useMemo(() => {
@@ -29,22 +76,25 @@ export function HomePage() {
     ) => {
       let list = fallbackProducts;
       if (source === "selected" && selectedIds && selectedIds.length > 0) {
-        const productMap = new Map(allProducts.map((p) => [p.id, p]));
-        const ordered = selectedIds.map((id) => productMap.get(id)).filter(Boolean) as typeof allProducts;
+        const ordered = selectedIds
+          .map((id) => availableProductMap.get(id))
+          .filter(Boolean) as Product[];
         if (ordered.length > 0) {
           list = ordered;
         }
       } else if (source === "category" && categoryFilter) {
-        const catMatched = allProducts.filter(
+        const catMatched = Array.from(availableProductMap.values()).filter(
           (p) => p.category?.toLowerCase() === categoryFilter.toLowerCase(),
         );
         if (catMatched.length > 0) {
           list = catMatched;
         }
+      } else if (source === "auto" && dbProducts && dbProducts.length > 0) {
+        list = dbProducts;
       }
       return list.slice(0, maxItems || 8);
     };
-  }, []);
+  }, [availableProductMap, dbProducts]);
 
   const trendingProducts = getProductsForSection(
     config?.trending?.source,
