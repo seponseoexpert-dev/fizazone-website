@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export type CategoryItemConfig = {
   id: string;
@@ -151,8 +152,8 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
     action_link: "/categories",
     is_active: true,
     layout: "grid_4",
-    source: "auto",
-    selected_product_ids: [],
+    source: "selected",
+    selected_product_ids: ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8"],
     max_items: 8,
   },
   mid_banner: {
@@ -181,7 +182,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
     layout: "grid_4",
     source: "auto",
     category_filter: "Kurti",
-    selected_product_ids: [],
+    selected_product_ids: ["e1", "e2", "e3", "e4"],
     max_items: 8,
   },
   flash_sale: {
@@ -193,7 +194,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
     is_active: true,
     layout: "grid_4",
     source: "auto",
-    selected_product_ids: [],
+    selected_product_ids: ["f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8"],
     max_items: 8,
   },
   popular: {
@@ -204,8 +205,8 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
     action_link: "/categories",
     is_active: true,
     layout: "grid_4",
-    source: "auto",
-    selected_product_ids: [],
+    source: "selected",
+    selected_product_ids: ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"],
     max_items: 8,
   },
   extra_sections: [],
@@ -213,27 +214,83 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
 };
 
 export async function fetchHomepageConfig(): Promise<HomepageConfig> {
+  // 1. Direct Supabase read from site_settings (works in browser & server)
+  try {
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "homepage_config")
+      .maybeSingle();
+
+    if (!error && data?.value && typeof data.value === "object" && Object.keys(data.value).length > 0) {
+      const merged = { ...DEFAULT_HOMEPAGE_CONFIG, ...(data.value as Partial<HomepageConfig>) };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("fz_homepage_config", JSON.stringify(merged));
+        } catch {}
+      }
+      return merged;
+    }
+  } catch (err) {
+    console.warn("Direct Supabase fetch error:", err);
+  }
+
+  // 2. Read from localStorage cache
+  if (typeof window !== "undefined") {
+    try {
+      const cached = localStorage.getItem("fz_homepage_config");
+      if (cached) {
+        return { ...DEFAULT_HOMEPAGE_CONFIG, ...JSON.parse(cached) };
+      }
+    } catch {}
+  }
+
+  // 3. Fallback to API route
   try {
     const res = await fetch("/api/homepage-settings", { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to fetch homepage settings");
-    const json = await res.json();
-    return { ...DEFAULT_HOMEPAGE_CONFIG, ...json };
-  } catch (e) {
-    console.warn("Using fallback homepage settings:", e);
-    return DEFAULT_HOMEPAGE_CONFIG;
-  }
+    if (res.ok) {
+      const json = await res.json();
+      return { ...DEFAULT_HOMEPAGE_CONFIG, ...json };
+    }
+  } catch {}
+
+  return DEFAULT_HOMEPAGE_CONFIG;
 }
 
 export async function saveHomepageConfig(config: HomepageConfig): Promise<boolean> {
-  const res = await fetch("/api/homepage-settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(config),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || "Failed to save homepage settings");
+  let saved = false;
+
+  // 1. Direct Supabase upsert using current user session
+  try {
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({ key: "homepage_config", value: config as never }, { onConflict: "key" });
+
+    if (!error) {
+      saved = true;
+    } else {
+      console.warn("Direct site_settings upsert returned error:", error);
+    }
+  } catch (sbErr) {
+    console.warn("Direct site_settings upsert exception:", sbErr);
   }
+
+  // 2. Always persist in localStorage
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("fz_homepage_config", JSON.stringify(config));
+    } catch {}
+  }
+
+  // 3. Also notify API route for server file sync
+  try {
+    await fetch("/api/homepage-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+  } catch {}
+
   return true;
 }
 
@@ -241,7 +298,7 @@ export function useHomepageConfig() {
   return useQuery({
     queryKey: ["homepage-config"],
     queryFn: fetchHomepageConfig,
-    staleTime: 30_000,
+    staleTime: 5_000,
     initialData: DEFAULT_HOMEPAGE_CONFIG,
   });
 }

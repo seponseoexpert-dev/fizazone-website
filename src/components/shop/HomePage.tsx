@@ -29,10 +29,10 @@ export function HomePage() {
     ) => {
       let list = fallbackProducts;
       if (source === "selected" && selectedIds && selectedIds.length > 0) {
-        const idSet = new Set(selectedIds);
-        const matched = allProducts.filter((p) => idSet.has(p.id));
-        if (matched.length > 0) {
-          list = matched;
+        const productMap = new Map(allProducts.map((p) => [p.id, p]));
+        const ordered = selectedIds.map((id) => productMap.get(id)).filter(Boolean) as typeof allProducts;
+        if (ordered.length > 0) {
+          list = ordered;
         }
       } else if (source === "category" && categoryFilter) {
         const catMatched = allProducts.filter(

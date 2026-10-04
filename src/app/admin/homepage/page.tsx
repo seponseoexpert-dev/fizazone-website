@@ -5,6 +5,7 @@ import { Link } from "@/components/ui/link";
 import {
   Boxes,
   Check,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -21,6 +22,7 @@ import {
   Save,
   Search,
   Sparkles,
+  Square,
   Star,
   Trash2,
   X,
@@ -42,6 +44,19 @@ import {
   type ProductSectionLayout,
 } from "@/lib/homepage-config";
 import { allProducts, categories as defaultCategories, type Product } from "@/components/shop/data";
+import { getImageSrc } from "@/lib/utils";
+
+import promoMen from "@/assets/promo-men.jpg";
+import promoWomen from "@/assets/promo-women.jpg";
+import promoKids from "@/assets/promo-kids.jpg";
+import winterImg from "@/assets/winter-collection.jpg";
+
+const DEFAULT_PROMO_IMAGES = [
+  getImageSrc(promoMen),
+  getImageSrc(promoWomen),
+  getImageSrc(promoKids),
+];
+const DEFAULT_WINTER_IMAGE = getImageSrc(winterImg);
 
 type Lang = "en" | "bn";
 
@@ -66,7 +81,7 @@ const DICT = {
       off: "Off",
       enabled: "Section Enabled",
       disabled: "Section Disabled",
-      itemsEnabled: "of items enabled",
+      itemsEnabled: "categories enabled",
       selectedCount: "products selected",
     },
     categories: {
@@ -77,7 +92,12 @@ const DICT = {
       modeAll: "All Categories",
       modeSelected: "Selected Categories Only",
       layoutLabel: "Layout Style",
-      listLabel: "Categories ON/OFF & Selection",
+      listLabel: "Categories Selection & Toggle",
+      selectAll: "Select All",
+      deselectAll: "Deselect All",
+      searchPlaceholder: "Search categories...",
+      selectedNote: "Only categories with a checkmark will appear on your homepage.",
+      allNote: "All active store categories are currently showing on the homepage.",
     },
     promo: {
       title: "Advertisements Strip Management",
@@ -92,6 +112,7 @@ const DICT = {
       descText: "Description Note",
       imageLabel: "Ad Image (Upload or URL)",
       uploadBtn: "Upload Promo Image",
+      livePreview: "Live Ad Preview",
     },
     midBanner: {
       title: "Mid-Page Promo Banner",
@@ -107,6 +128,7 @@ const DICT = {
       descLabel: "Description",
       imageLabel: "Banner Image (Upload or URL)",
       uploadBtn: "Upload Banner Image",
+      livePreview: "Banner Live Preview",
     },
     sections: {
       headingLabel: "Section Heading",
@@ -117,10 +139,12 @@ const DICT = {
       sourceLabel: "Product Source",
       sourceAuto: "Auto / All",
       sourceHandpick: "Handpick Products",
-      selectedLabel: "Selected Products",
+      selectedLabel: "Current Selected Products",
       searchPlaceholder: "Search products to select by name or category...",
-      noSelected: "No products handpicked yet. Click on any product below to select it.",
+      noSelected: "No products handpicked yet. Click on any product below to add it.",
       availableTitle: "Store Products Catalog (Click to select/unselect)",
+      selectedBtn: "Selected",
+      selectBtn: "Select Product",
     },
     layouts: {
       carousel: {
@@ -172,7 +196,7 @@ const DICT = {
       off: "বন্ধ",
       enabled: "সেকশন চালু আছে",
       disabled: "সেকশন বন্ধ আছে",
-      itemsEnabled: "টি আইটেম চালু আছে",
+      itemsEnabled: "টি ক্যাটাগরি নির্বাচিত",
       selectedCount: "টি প্রোডাক্ট নির্বাচিত",
     },
     categories: {
@@ -183,7 +207,12 @@ const DICT = {
       modeAll: "সকল ক্যাটাগরি",
       modeSelected: "শুধু নির্বাচিত ক্যাটাগরি",
       layoutLabel: "প্রদর্শনের স্টাইল",
-      listLabel: "ক্যাটাগরি অন/অফ ও নির্বাচন",
+      listLabel: "ক্যাটাগরি নির্বাচন ও অন/অফ",
+      selectAll: "সব সিলেক্ট করুন",
+      deselectAll: "সব বাতিল করুন",
+      searchPlaceholder: "ক্যাটাগরি খুঁজুন...",
+      selectedNote: "হোমপেজে শুধুমাত্র যে ক্যাটাগরিগুলোতে টিক চিহ্ন দেওয়া আছে সেগুলো প্রদর্শিত হবে।",
+      allNote: "বর্তমানে স্টোরের সব সক্রিয় ক্যাটাগরি হোমপেজে প্রদর্শিত হচ্ছে।",
     },
     promo: {
       title: "বিজ্ঞাপন স্ট্রিপ ব্যবস্থাপনা",
@@ -198,6 +227,7 @@ const DICT = {
       descText: "বিবরণী নোট",
       imageLabel: "বিজ্ঞাপনের ছবি (আপলোড বা URL)",
       uploadBtn: "বিজ্ঞাপনের ছবি আপলোড",
+      livePreview: "বিজ্ঞাপনের লাইভ প্রিভিউ",
     },
     midBanner: {
       title: "বিজ্ঞাপন ব্যানার (মাঝখানের ব্যানার)",
@@ -213,6 +243,7 @@ const DICT = {
       descLabel: "বর্ণনা",
       imageLabel: "ব্যানারের ছবি (আপলোড বা URL)",
       uploadBtn: "ব্যানার ছবি আপলোড",
+      livePreview: "ব্যানারের লাইভ প্রিভিউ",
     },
     sections: {
       headingLabel: "সেকশন শিরোনাম",
@@ -223,10 +254,12 @@ const DICT = {
       sourceLabel: "প্রোডাক্ট সোর্স",
       sourceAuto: "স্বয়ংক্রিয় / সকল",
       sourceHandpick: "নির্দিষ্ট প্রোডাক্ট নির্বাচন",
-      selectedLabel: "নির্বাচিত প্রোডাক্ট সমূহ",
+      selectedLabel: "বর্তমান নির্বাচিত প্রোডাক্ট সমূহ",
       searchPlaceholder: "প্রোডাক্টের নাম বা ক্যাটাগরি লিখে খুঁজুন...",
       noSelected: "এখনও কোনো প্রোডাক্ট নির্বাচন করা হয়নি। নিচের তালিকা থেকে প্রোডাক্ট সিলেক্ট করুন।",
       availableTitle: "স্টোরের সকল প্রোডাক্ট (সিলেক্ট করতে ক্লিক করুন)",
+      selectedBtn: "নির্বাচিত",
+      selectBtn: "সিলেক্ট করুন",
     },
     layouts: {
       carousel: {
@@ -279,22 +312,21 @@ type ActiveTab =
   | "extra_sections";
 
 export default function AdminHomepageStudioPage() {
-  const [allowed, setAllowed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
   const [activeTab, setActiveTab] = useState<ActiveTab>("categories");
-  const [lang, setLang] = useState<Lang>("bn"); // default to Bengali, switchable to English
+  const [lang, setLang] = useState<Lang>("bn");
   const [availableProducts, setAvailableProducts] = useState<Product[]>(allProducts);
+  const [categorySearch, setCategorySearch] = useState("");
 
   const t = DICT[lang];
   const tabsScrollRef = useRef<HTMLDivElement>(null);
 
-  // Tab scroll navigation
   const scrollTabs = (dir: "left" | "right") => {
     if (tabsScrollRef.current) {
       tabsScrollRef.current.scrollBy({
-        left: dir === "left" ? -200 : 200,
+        left: dir === "left" ? -220 : 220,
         behavior: "smooth",
       });
     }
@@ -306,7 +338,7 @@ export default function AdminHomepageStudioPage() {
       const cfg = await fetchHomepageConfig();
       setConfig(cfg);
 
-      // Load products from DB
+      // Load products
       try {
         const { data: dbProducts } = await supabase
           .from("products")
@@ -333,9 +365,9 @@ export default function AdminHomepageStudioPage() {
           setAvailableProducts(merged);
         }
       } catch (e) {
-        console.warn("DB product fetch fallback:", e);
+        console.warn("DB product fetch error:", e);
       }
-    } catch (err) {
+    } catch {
       toast.error(lang === "bn" ? "হোমপেজ ডাটা লোড করা যায়নি" : "Could not load homepage data");
     } finally {
       setLoading(false);
@@ -343,23 +375,32 @@ export default function AdminHomepageStudioPage() {
   }, [lang]);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        setAllowed(true);
-        void loadData();
-        return;
-      }
-      const ok = await isAdmin(data.user.id);
-      setAllowed(ok !== false);
-      void loadData();
-    })();
+    void loadData();
   }, [loadData]);
 
+  // Robust Save function that writes to Supabase, localStorage, and API
   const handleSave = async () => {
     setSaving(true);
     try {
+      // 1. Direct write to Supabase site_settings
+      const { error: sbError } = await supabase
+        .from("site_settings")
+        .upsert({ key: "homepage_config", value: config as never }, { onConflict: "key" });
+
+      if (sbError) {
+        console.warn("Supabase upsert warning:", sbError);
+      }
+
+      // 2. Persist in localStorage
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("fz_homepage_config", JSON.stringify(config));
+        } catch {}
+      }
+
+      // 3. Save via helper
       await saveHomepageConfig(config);
+
       toast.success(t.toasts.saveSuccess);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t.toasts.saveError;
@@ -392,7 +433,7 @@ export default function AdminHomepageStudioPage() {
   return (
     <AdminShell>
       <div className="space-y-6 pb-20">
-        {/* Top Header & Action Bar */}
+        {/* Header Bar */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-5">
           <div>
             <div className="flex items-center gap-2">
@@ -407,7 +448,7 @@ export default function AdminHomepageStudioPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Language Switcher Button (Strict single language) */}
+            {/* Strict Single Language Switcher */}
             <div className="inline-flex items-center rounded-lg border border-border bg-card p-0.5">
               <button
                 type="button"
@@ -459,7 +500,7 @@ export default function AdminHomepageStudioPage() {
           </div>
         </div>
 
-        {/* Scrollable Tabs Container with Left & Right Nav Buttons */}
+        {/* Scrollable Tabs Navigation with Arrows */}
         <div className="relative flex items-center">
           <button
             type="button"
@@ -495,7 +536,7 @@ export default function AdminHomepageStudioPage() {
               onClick={() => setActiveTab("trending")}
               icon={<Flame className="h-4 w-4" />}
               label={t.tabs.trending}
-              badge={config.trending.is_active ? t.status.active : t.status.off}
+              badge={config.trending.is_active ? config.trending.layout : t.status.off}
               badgeTone={config.trending.is_active ? "amber" : "gray"}
             />
             <TabButton
@@ -511,7 +552,7 @@ export default function AdminHomepageStudioPage() {
               onClick={() => setActiveTab("popular")}
               icon={<Star className="h-4 w-4" />}
               label={t.tabs.popular}
-              badge={config.popular.is_active ? t.status.active : t.status.off}
+              badge={config.popular.is_active ? config.popular.layout : t.status.off}
               badgeTone={config.popular.is_active ? "green" : "gray"}
             />
             <TabButton
@@ -598,9 +639,9 @@ export default function AdminHomepageStudioPage() {
                             categories: { ...prev.categories, mode: "all" },
                           }))
                         }
-                        className={`h-10 rounded-lg border text-xs font-semibold transition ${
+                        className={`h-10 rounded-lg border text-xs font-bold transition ${
                           config.categories.mode === "all"
-                            ? "border-sale bg-sale/10 text-sale"
+                            ? "border-sale bg-sale/10 text-sale shadow-xs"
                             : "border-border bg-background text-muted-foreground hover:bg-secondary"
                         }`}
                       >
@@ -614,9 +655,9 @@ export default function AdminHomepageStudioPage() {
                             categories: { ...prev.categories, mode: "selected" },
                           }))
                         }
-                        className={`h-10 rounded-lg border text-xs font-semibold transition ${
+                        className={`h-10 rounded-lg border text-xs font-bold transition ${
                           config.categories.mode === "selected"
-                            ? "border-sale bg-sale/10 text-sale"
+                            ? "border-sale bg-sale/10 text-sale shadow-xs"
                             : "border-border bg-background text-muted-foreground hover:bg-secondary"
                         }`}
                       >
@@ -626,7 +667,20 @@ export default function AdminHomepageStudioPage() {
                   </div>
                 </div>
 
-                {/* Layout Selector with Wireframes */}
+                {/* Mode Explanation Notice */}
+                <div className="rounded-xl border border-border/80 bg-background/60 p-3 text-xs text-muted-foreground flex items-center justify-between">
+                  <span>
+                    {config.categories.mode === "selected"
+                      ? t.categories.selectedNote
+                      : t.categories.allNote}
+                  </span>
+                  <span className="font-semibold text-foreground">
+                    {config.categories.items.filter((c) => c.is_active).length} of{" "}
+                    {config.categories.items.length} {t.status.itemsEnabled}
+                  </span>
+                </div>
+
+                {/* Layout Selector */}
                 <div>
                   <label className="block text-xs font-semibold text-foreground mb-2">
                     {t.categories.layoutLabel}
@@ -649,7 +703,7 @@ export default function AdminHomepageStudioPage() {
                         }
                         className={`flex flex-col items-start p-3 rounded-xl border text-left transition ${
                           config.categories.layout === ly.id
-                            ? "border-sale bg-sale/5 shadow-sm ring-1 ring-sale"
+                            ? "border-sale bg-sale/5 shadow-sm ring-2 ring-sale"
                             : "border-border bg-background hover:bg-secondary/50"
                         }`}
                       >
@@ -662,72 +716,122 @@ export default function AdminHomepageStudioPage() {
                   </div>
                 </div>
 
-                {/* Individual Categories Toggle List */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="text-xs font-semibold text-foreground">
-                      {t.categories.listLabel}
-                    </label>
-                    <span className="text-xs text-muted-foreground">
-                      {config.categories.items.filter((c) => c.is_active).length} of{" "}
-                      {config.categories.items.length} {t.status.itemsEnabled}
-                    </span>
+                {/* Direct Category Picker Suite */}
+                <div className="rounded-2xl border border-border bg-background p-4 sm:p-5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-3">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        placeholder={t.categories.searchPlaceholder}
+                        className="h-9 w-full rounded-xl border border-border bg-card pl-9 pr-3 text-xs outline-none focus:border-sale"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfig((prev) => ({
+                            ...prev,
+                            categories: {
+                              ...prev.categories,
+                              items: prev.categories.items.map((c) => ({ ...c, is_active: true })),
+                            },
+                          }));
+                        }}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+                      >
+                        {t.categories.selectAll}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfig((prev) => ({
+                            ...prev,
+                            categories: {
+                              ...prev.categories,
+                              items: prev.categories.items.map((c) => ({ ...c, is_active: false })),
+                            },
+                          }));
+                        }}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-destructive"
+                      >
+                        {t.categories.deselectAll}
+                      </button>
+                    </div>
                   </div>
 
+                  {/* Category Selection Cards */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-                    {config.categories.items.map((cat, idx) => {
-                      const defaultImg =
-                        defaultCategories.find(
-                          (c) => c.name.toLowerCase() === cat.name.toLowerCase(),
-                        )?.image || defaultCategories[0]?.image;
+                    {config.categories.items
+                      .filter((c) => !categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase()))
+                      .map((cat, idx) => {
+                        const defaultImg =
+                          defaultCategories.find(
+                            (c) => c.name.toLowerCase() === cat.name.toLowerCase(),
+                          )?.image || defaultCategories[0]?.image;
 
-                      return (
-                        <div
-                          key={cat.id || cat.name}
-                          className={`flex flex-col items-center justify-between rounded-xl border p-2.5 transition text-center ${
-                            cat.is_active
-                              ? "border-sale/40 bg-sale/[0.02]"
-                              : "border-border bg-muted/30 opacity-60"
-                          }`}
-                        >
-                          <div className="h-14 w-14 overflow-hidden rounded-lg bg-muted">
-                            <img
-                              src={cat.image || defaultImg}
-                              alt={cat.name}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-
-                          <span className="mt-2 text-xs font-semibold truncate max-w-full text-foreground">
-                            {cat.name}
-                          </span>
-
-                          <button
-                            type="button"
+                        return (
+                          <div
+                            key={cat.id || cat.name}
                             onClick={() => {
                               setConfig((prev) => {
                                 const newItems = [...prev.categories.items];
-                                newItems[idx] = {
-                                  ...newItems[idx],
-                                  is_active: !newItems[idx].is_active,
-                                };
+                                const realIdx = prev.categories.items.findIndex(
+                                  (item) => item.name === cat.name,
+                                );
+                                if (realIdx !== -1) {
+                                  newItems[realIdx] = {
+                                    ...newItems[realIdx],
+                                    is_active: !newItems[realIdx].is_active,
+                                  };
+                                }
                                 return {
                                   ...prev,
                                   categories: { ...prev.categories, items: newItems },
                                 };
                               });
                             }}
-                            className={`mt-2.5 w-full rounded-md py-1 text-[10px] font-bold uppercase transition ${
+                            className={`flex cursor-pointer flex-col items-center justify-between rounded-xl border p-2.5 transition text-center select-none ${
                               cat.is_active
-                                ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-                                : "bg-muted text-muted-foreground hover:bg-secondary"
+                                ? "border-sale bg-sale/5 shadow-xs ring-1 ring-sale"
+                                : "border-border bg-card opacity-60 hover:opacity-100 hover:border-sale/40"
                             }`}
                           >
-                            {cat.is_active ? t.status.active : t.status.off}
-                          </button>
-                        </div>
-                      );
-                    })}
+                            <div className="relative h-14 w-14 overflow-hidden rounded-lg bg-muted">
+                              <img
+                                src={cat.image || defaultImg}
+                                alt={cat.name}
+                                className="h-full w-full object-cover"
+                              />
+                              <div
+                                className={`absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full text-white shadow-xs ${
+                                  cat.is_active ? "bg-sale" : "bg-muted-foreground/50"
+                                }`}
+                              >
+                                {cat.is_active && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                              </div>
+                            </div>
+
+                            <span className="mt-2 text-xs font-bold truncate max-w-full text-foreground">
+                              {cat.name}
+                            </span>
+
+                            <span
+                              className={`mt-2 w-full rounded-md py-1 text-[10px] font-bold uppercase transition ${
+                                cat.is_active
+                                  ? "bg-sale text-white"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {cat.is_active ? t.status.active : t.status.off}
+                            </span>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               </div>
@@ -736,7 +840,7 @@ export default function AdminHomepageStudioPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 2: PROMO ADVERTISEMENTS                                                */}
+        {/* TAB 2: PROMO ADVERTISEMENTS WITH LIVE PREVIEWS                             */}
         {/* ========================================================================= */}
         {activeTab === "promo_strip" && (
           <div className="space-y-6 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
@@ -757,7 +861,7 @@ export default function AdminHomepageStudioPage() {
                       tag: lang === "bn" ? "স্পেশাল" : "Winter",
                       badge: "2026",
                       description: lang === "bn" ? "অনলাইন ও স্টোরে উপলব্ধ" : "Available in store & online",
-                      image: "",
+                      image: DEFAULT_PROMO_IMAGES[0] || "",
                       link: "/categories",
                       bg_color: "bg-brand-blush",
                       is_active: true,
@@ -794,208 +898,250 @@ export default function AdminHomepageStudioPage() {
             </div>
 
             {config.promo_strip.enabled && (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {config.promo_strip.items.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">{t.promo.noAds}</p>
                 ) : (
-                  config.promo_strip.items.map((ad, idx) => (
-                    <div
-                      key={ad.id}
-                      className="rounded-xl border border-border bg-background p-4 sm:p-5 transition hover:border-sale/50 space-y-4"
-                    >
-                      <div className="flex items-center justify-between border-b border-border/50 pb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="grid h-6 w-6 place-items-center rounded-full bg-sale/10 text-xs font-bold text-sale">
-                            {idx + 1}
-                          </span>
-                          <span className="font-semibold text-sm text-foreground">
-                            {ad.title || "Untitled"}
-                          </span>
+                  config.promo_strip.items.map((ad, idx) => {
+                    const fallbackImg = DEFAULT_PROMO_IMAGES[idx % DEFAULT_PROMO_IMAGES.length] || "";
+                    const displayImg = ad.image || fallbackImg;
+
+                    return (
+                      <div
+                        key={ad.id}
+                        className="rounded-2xl border border-border bg-background p-4 sm:p-5 transition hover:border-sale/40 space-y-4"
+                      >
+                        {/* Ad Card Header */}
+                        <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="grid h-6 w-6 place-items-center rounded-full bg-sale/10 text-xs font-bold text-sale">
+                              {idx + 1}
+                            </span>
+                            <span className="font-bold text-sm text-foreground">
+                              {ad.title || "Untitled Ad"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConfig((prev) => {
+                                  const items = [...prev.promo_strip.items];
+                                  items[idx] = { ...items[idx], is_active: !items[idx].is_active };
+                                  return { ...prev, promo_strip: { ...prev.promo_strip, items } };
+                                });
+                              }}
+                              className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                ad.is_active
+                                  ? "bg-emerald-500/10 text-emerald-600"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {ad.is_active ? t.status.active : t.status.off}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(t.toasts.deleteConfirm)) {
+                                  setConfig((prev) => ({
+                                    ...prev,
+                                    promo_strip: {
+                                      ...prev.promo_strip,
+                                      items: prev.promo_strip.items.filter((_, i) => i !== idx),
+                                    },
+                                  }));
+                                }
+                              }}
+                              className="p-1.5 text-muted-foreground hover:text-destructive transition"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setConfig((prev) => {
-                                const items = [...prev.promo_strip.items];
-                                items[idx] = { ...items[idx], is_active: !items[idx].is_active };
-                                return {
-                                  ...prev,
-                                  promo_strip: { ...prev.promo_strip, items },
-                                };
-                              });
-                            }}
-                            className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                              ad.is_active
-                                ? "bg-emerald-500/10 text-emerald-600"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {ad.is_active ? t.status.active : t.status.off}
-                          </button>
+                        {/* Split: Form on Left, Live Preview on Right */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                          <div className="lg:col-span-8 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                  {t.promo.mainTitle}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={ad.title}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setConfig((prev) => {
+                                      const items = [...prev.promo_strip.items];
+                                      items[idx] = { ...items[idx], title: val };
+                                      return { ...prev, promo_strip: { ...prev.promo_strip, items } };
+                                    });
+                                  }}
+                                  className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                                />
+                              </div>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (window.confirm(t.toasts.deleteConfirm)) {
-                                setConfig((prev) => ({
-                                  ...prev,
-                                  promo_strip: {
-                                    ...prev.promo_strip,
-                                    items: prev.promo_strip.items.filter((_, i) => i !== idx),
-                                  },
-                                }));
-                              }
-                            }}
-                            className="p-1.5 text-muted-foreground hover:text-destructive transition"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                              <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                  {t.promo.tagText}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={ad.tag || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setConfig((prev) => {
+                                      const items = [...prev.promo_strip.items];
+                                      items[idx] = { ...items[idx], tag: val };
+                                      return { ...prev, promo_strip: { ...prev.promo_strip, items } };
+                                    });
+                                  }}
+                                  className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                  {t.promo.badgeText}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={ad.badge || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setConfig((prev) => {
+                                      const items = [...prev.promo_strip.items];
+                                      items[idx] = { ...items[idx], badge: val };
+                                      return { ...prev, promo_strip: { ...prev.promo_strip, items } };
+                                    });
+                                  }}
+                                  className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                  {t.promo.linkText}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={ad.link}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setConfig((prev) => {
+                                      const items = [...prev.promo_strip.items];
+                                      items[idx] = { ...items[idx], link: val };
+                                      return { ...prev, promo_strip: { ...prev.promo_strip, items } };
+                                    });
+                                  }}
+                                  className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                  {t.promo.bgText}
+                                </label>
+                                <select
+                                  value={ad.bg_color}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setConfig((prev) => {
+                                      const items = [...prev.promo_strip.items];
+                                      items[idx] = { ...items[idx], bg_color: val };
+                                      return { ...prev, promo_strip: { ...prev.promo_strip, items } };
+                                    });
+                                  }}
+                                  className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                                >
+                                  {TINTS.map((tint) => (
+                                    <option key={tint.value} value={tint.value}>
+                                      {tint.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                  {t.promo.descText}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={ad.description || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setConfig((prev) => {
+                                      const items = [...prev.promo_strip.items];
+                                      items[idx] = { ...items[idx], description: val };
+                                      return { ...prev, promo_strip: { ...prev.promo_strip, items } };
+                                    });
+                                  }}
+                                  className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Image Uploader */}
+                            <div>
+                              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                {t.promo.imageLabel}
+                              </label>
+                              <ImageUploader
+                                value={ad.image}
+                                onChange={(url) => {
+                                  setConfig((prev) => {
+                                    const items = [...prev.promo_strip.items];
+                                    items[idx] = { ...items[idx], image: url };
+                                    return { ...prev, promo_strip: { ...prev.promo_strip, items } };
+                                  });
+                                }}
+                                label={t.promo.uploadBtn}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Live Visual Card Preview */}
+                          <div className="lg:col-span-4 space-y-2">
+                            <span className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                              {t.promo.livePreview}
+                            </span>
+                            <div
+                              className={`relative flex items-center justify-between overflow-hidden rounded-2xl ${ad.bg_color} p-4 shadow-sm border border-border/50`}
+                            >
+                              <div className="min-w-0 flex-1 pr-2">
+                                {ad.tag && (
+                                  <p className="font-display text-base italic text-sale">{ad.tag}</p>
+                                )}
+                                <h4 className="mt-0.5 truncate text-sm font-bold text-foreground">
+                                  {ad.title || "Ad Title"}
+                                </h4>
+                                {ad.badge && (
+                                  <p className="text-[11px] text-muted-foreground">{ad.badge}</p>
+                                )}
+                                {ad.description && (
+                                  <p className="mt-1.5 text-[10px] text-muted-foreground line-clamp-2">
+                                    {ad.description}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white/40 shadow-xs">
+                                <img
+                                  src={displayImg}
+                                  alt=""
+                                  className="h-full w-full object-cover object-top"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            {t.promo.mainTitle}
-                          </label>
-                          <input
-                            type="text"
-                            value={ad.title}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setConfig((prev) => {
-                                const items = [...prev.promo_strip.items];
-                                items[idx] = { ...items[idx], title: val };
-                                return { ...prev, promo_strip: { ...prev.promo_strip, items } };
-                              });
-                            }}
-                            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            {t.promo.tagText}
-                          </label>
-                          <input
-                            type="text"
-                            value={ad.tag || ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setConfig((prev) => {
-                                const items = [...prev.promo_strip.items];
-                                items[idx] = { ...items[idx], tag: val };
-                                return { ...prev, promo_strip: { ...prev.promo_strip, items } };
-                              });
-                            }}
-                            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            {t.promo.badgeText}
-                          </label>
-                          <input
-                            type="text"
-                            value={ad.badge || ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setConfig((prev) => {
-                                const items = [...prev.promo_strip.items];
-                                items[idx] = { ...items[idx], badge: val };
-                                return { ...prev, promo_strip: { ...prev.promo_strip, items } };
-                              });
-                            }}
-                            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            {t.promo.linkText}
-                          </label>
-                          <input
-                            type="text"
-                            value={ad.link}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setConfig((prev) => {
-                                const items = [...prev.promo_strip.items];
-                                items[idx] = { ...items[idx], link: val };
-                                return { ...prev, promo_strip: { ...prev.promo_strip, items } };
-                              });
-                            }}
-                            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            {t.promo.bgText}
-                          </label>
-                          <select
-                            value={ad.bg_color}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setConfig((prev) => {
-                                const items = [...prev.promo_strip.items];
-                                items[idx] = { ...items[idx], bg_color: val };
-                                return { ...prev, promo_strip: { ...prev.promo_strip, items } };
-                              });
-                            }}
-                            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          >
-                            {TINTS.map((tint) => (
-                              <option key={tint.value} value={tint.value}>
-                                {tint.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">
-                            {t.promo.descText}
-                          </label>
-                          <input
-                            type="text"
-                            value={ad.description || ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setConfig((prev) => {
-                                const items = [...prev.promo_strip.items];
-                                items[idx] = { ...items[idx], description: val };
-                                return { ...prev, promo_strip: { ...prev.promo_strip, items } };
-                              });
-                            }}
-                            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Image Upload */}
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                          {t.promo.imageLabel}
-                        </label>
-                        <ImageUploader
-                          value={ad.image}
-                          onChange={(url) => {
-                            setConfig((prev) => {
-                              const items = [...prev.promo_strip.items];
-                              items[idx] = { ...items[idx], image: url };
-                              return { ...prev, promo_strip: { ...prev.promo_strip, items } };
-                            });
-                          }}
-                          label={t.promo.uploadBtn}
-                        />
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
@@ -1003,7 +1149,7 @@ export default function AdminHomepageStudioPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 3: TRENDING NOW                                                        */}
+        {/* TAB 3: TRENDING NOW WITH DIRECT PRODUCT SELECTOR & WIREFRAMES             */}
         {/* ========================================================================= */}
         {activeTab === "trending" && (
           <SectionConfigEditor
@@ -1017,7 +1163,7 @@ export default function AdminHomepageStudioPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 4: MID-PAGE BANNER                                                     */}
+        {/* TAB 4: MID-PAGE BANNER WITH LIVE PREVIEW                                   */}
         {/* ========================================================================= */}
         {activeTab === "mid_banner" && (
           <div className="space-y-6 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
@@ -1046,160 +1192,204 @@ export default function AdminHomepageStudioPage() {
 
             {config.mid_banner.enabled && (
               <div className="space-y-6">
-                {config.mid_banner.banners.map((b, idx) => (
-                  <div
-                    key={b.id || idx}
-                    className="space-y-4 rounded-xl border border-border bg-background p-4 sm:p-5"
-                  >
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {config.mid_banner.banners.map((b, idx) => {
+                  const bannerImage = b.image || DEFAULT_WINTER_IMAGE;
+
+                  return (
+                    <div
+                      key={b.id || idx}
+                      className="space-y-5 rounded-2xl border border-border bg-background p-4 sm:p-5"
+                    >
+                      {/* Live Banner Preview */}
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          {t.midBanner.tagLabel}
-                        </label>
-                        <input
-                          type="text"
-                          value={b.tag}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setConfig((prev) => {
-                              const banners = [...prev.mid_banner.banners];
-                              banners[idx] = { ...banners[idx], tag: val };
-                              return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
-                            });
-                          }}
-                          className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          placeholder="Winter"
-                        />
+                        <span className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                          {t.midBanner.livePreview}
+                        </span>
+                        <div className="relative overflow-hidden rounded-2xl shadow-sm border border-border">
+                          <img
+                            src={bannerImage}
+                            alt=""
+                            className="h-40 w-full object-cover sm:h-52 md:h-60"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/40" />
+                          <div
+                            className={`absolute flex flex-col justify-center w-full sm:w-1/2 p-6 ${
+                              b.align === "left"
+                                ? "inset-y-0 left-0 text-left items-start"
+                                : b.align === "center"
+                                  ? "inset-0 text-center items-center"
+                                  : "inset-y-0 right-0 text-right items-end"
+                            }`}
+                          >
+                            {b.tag && (
+                              <p className="font-display text-xl italic text-sale sm:text-2xl drop-shadow">
+                                {b.tag}
+                              </p>
+                            )}
+                            <h3 className="text-2xl font-extrabold text-white sm:text-4xl drop-shadow">
+                              {b.title || "Collection"}
+                            </h3>
+                            {b.description && (
+                              <p className="mt-1 text-xs text-white/90 sm:text-sm drop-shadow max-w-sm">
+                                {b.description}
+                              </p>
+                            )}
+                            {b.button_text && (
+                              <span className="mt-3 inline-block rounded-full bg-sale px-4 py-1.5 text-xs font-bold text-white shadow">
+                                {b.button_text}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          {t.midBanner.headlineLabel}
-                        </label>
-                        <input
-                          type="text"
-                          value={b.title}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setConfig((prev) => {
-                              const banners = [...prev.mid_banner.banners];
-                              banners[idx] = { ...banners[idx], title: val };
-                              return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
-                            });
-                          }}
-                          className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          placeholder="Collection"
-                        />
+                      {/* Inputs */}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">
+                            {t.midBanner.tagLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={b.tag}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setConfig((prev) => {
+                                const banners = [...prev.mid_banner.banners];
+                                banners[idx] = { ...banners[idx], tag: val };
+                                return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
+                              });
+                            }}
+                            className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">
+                            {t.midBanner.headlineLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={b.title}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setConfig((prev) => {
+                                const banners = [...prev.mid_banner.banners];
+                                banners[idx] = { ...banners[idx], title: val };
+                                return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
+                              });
+                            }}
+                            className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">
+                            {t.midBanner.buttonLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={b.button_text}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setConfig((prev) => {
+                                const banners = [...prev.mid_banner.banners];
+                                banners[idx] = { ...banners[idx], button_text: val };
+                                return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
+                              });
+                            }}
+                            className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">
+                            {t.midBanner.linkLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={b.button_link}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setConfig((prev) => {
+                                const banners = [...prev.mid_banner.banners];
+                                banners[idx] = { ...banners[idx], button_link: val };
+                                return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
+                              });
+                            }}
+                            className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">
+                            {t.midBanner.alignLabel}
+                          </label>
+                          <select
+                            value={b.align}
+                            onChange={(e) => {
+                              const val = e.target.value as "right" | "left" | "center";
+                              setConfig((prev) => {
+                                const banners = [...prev.mid_banner.banners];
+                                banners[idx] = { ...banners[idx], align: val };
+                                return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
+                              });
+                            }}
+                            className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                          >
+                            <option value="right">{t.midBanner.alignRight}</option>
+                            <option value="left">{t.midBanner.alignLeft}</option>
+                            <option value="center">{t.midBanner.alignCenter}</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">
+                            {t.midBanner.descLabel}
+                          </label>
+                          <input
+                            type="text"
+                            value={b.description}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setConfig((prev) => {
+                                const banners = [...prev.mid_banner.banners];
+                                banners[idx] = { ...banners[idx], description: val };
+                                return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
+                              });
+                            }}
+                            className="h-9 w-full rounded-lg border border-border bg-card px-3 text-xs outline-none focus:border-sale"
+                          />
+                        </div>
                       </div>
 
+                      {/* Image Upload */}
                       <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          {t.midBanner.buttonLabel}
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                          {t.midBanner.imageLabel}
                         </label>
-                        <input
-                          type="text"
-                          value={b.button_text}
-                          onChange={(e) => {
-                            const val = e.target.value;
+                        <ImageUploader
+                          value={b.image}
+                          onChange={(url) => {
                             setConfig((prev) => {
                               const banners = [...prev.mid_banner.banners];
-                              banners[idx] = { ...banners[idx], button_text: val };
+                              banners[idx] = { ...banners[idx], image: url };
                               return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
                             });
                           }}
-                          className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          placeholder="SHOP NOW"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          {t.midBanner.linkLabel}
-                        </label>
-                        <input
-                          type="text"
-                          value={b.button_link}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setConfig((prev) => {
-                              const banners = [...prev.mid_banner.banners];
-                              banners[idx] = { ...banners[idx], button_link: val };
-                              return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
-                            });
-                          }}
-                          className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                          placeholder="/categories"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          {t.midBanner.alignLabel}
-                        </label>
-                        <select
-                          value={b.align}
-                          onChange={(e) => {
-                            const val = e.target.value as "right" | "left" | "center";
-                            setConfig((prev) => {
-                              const banners = [...prev.mid_banner.banners];
-                              banners[idx] = { ...banners[idx], align: val };
-                              return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
-                            });
-                          }}
-                          className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
-                        >
-                          <option value="right">{t.midBanner.alignRight}</option>
-                          <option value="left">{t.midBanner.alignLeft}</option>
-                          <option value="center">{t.midBanner.alignCenter}</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">
-                          {t.midBanner.descLabel}
-                        </label>
-                        <input
-                          type="text"
-                          value={b.description}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setConfig((prev) => {
-                              const banners = [...prev.mid_banner.banners];
-                              banners[idx] = { ...banners[idx], description: val };
-                              return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
-                            });
-                          }}
-                          className="h-9 w-full rounded-lg border border-border bg-background px-3 text-xs outline-none focus:border-sale"
+                          label={t.midBanner.uploadBtn}
                         />
                       </div>
                     </div>
-
-                    {/* Banner Image Uploader */}
-                    <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                        {t.midBanner.imageLabel}
-                      </label>
-                      <ImageUploader
-                        value={b.image}
-                        onChange={(url) => {
-                          setConfig((prev) => {
-                            const banners = [...prev.mid_banner.banners];
-                            banners[idx] = { ...banners[idx], image: url };
-                            return { ...prev, mid_banner: { ...prev.mid_banner, banners } };
-                          });
-                        }}
-                        label={t.midBanner.uploadBtn}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 5: MOST POPULAR PRODUCTS                                               */}
+        {/* TAB 5: MOST POPULAR PRODUCTS WITH DIRECT PRODUCT SELECTOR & WIREFRAMES     */}
         {/* ========================================================================= */}
         {activeTab === "popular" && (
           <SectionConfigEditor
@@ -1266,7 +1456,6 @@ function SectionConfigEditor({
   const toggleProduct = (productId: string) => {
     const exists = selectedIds.includes(productId);
     const newIds = exists ? selectedIds.filter((id) => id !== productId) : [...selectedIds, productId];
-    // If user picks a product, automatically switch source to 'selected'
     onUpdate({
       ...section,
       source: "selected",
@@ -1488,7 +1677,7 @@ function SectionConfigEditor({
           </div>
 
           {/* ================================================================= */}
-          {/* DIRECT PRODUCT SELECTOR & HANDPICK SUITE                          */}
+          {/* DIRECT PRODUCT SELECTOR & CURRENT PRODUCTS DISPLAY                */}
           {/* ================================================================= */}
           <div className="rounded-2xl border border-border bg-background p-4 sm:p-5 space-y-4 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-3">
@@ -1496,8 +1685,8 @@ function SectionConfigEditor({
                 <h3 className="text-sm font-bold text-foreground">{t.sections.sourceLabel}</h3>
                 <p className="text-xs text-muted-foreground">
                   {lang === "bn"
-                    ? "স্বয়ংক্রিয়ভাবে দেখাবেন নাকি নিজের পছন্দের প্রোডাক্ট নির্বাচন করবেন তা নির্ধারণ করুন।"
-                    : "Choose between automatic store display or handpicking specific items."}
+                    ? "নিচের তালিকা থেকে আপনার পছন্দের প্রোডাক্টগুলোতে ক্লিক করে সহজেই সিলেক্ট বা আনসিলেক্ট করুন।"
+                    : "Click any product below to instantly select or deselect it for this section."}
                 </p>
               </div>
 
@@ -1530,14 +1719,17 @@ function SectionConfigEditor({
             {/* Currently Selected Products Chips */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-foreground">
-                  {t.sections.selectedLabel} ({selectedIds.length} {t.status.selectedCount})
+                <span className="text-xs font-bold text-foreground">
+                  {t.sections.selectedLabel}:{" "}
+                  <span className="text-sale">
+                    {selectedIds.length} {t.status.selectedCount}
+                  </span>
                 </span>
                 {selectedIds.length > 0 && (
                   <button
                     type="button"
                     onClick={() => onUpdate({ ...section, selected_product_ids: [] })}
-                    className="text-[11px] text-destructive hover:underline"
+                    className="text-[11px] text-destructive hover:underline font-semibold"
                   >
                     {lang === "bn" ? "সব মুছুন" : "Clear all"}
                   </button>
@@ -1564,6 +1756,7 @@ function SectionConfigEditor({
                           type="button"
                           onClick={() => removeProduct(id)}
                           className="ml-1 text-muted-foreground hover:text-destructive"
+                          title="Remove"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -1581,7 +1774,7 @@ function SectionConfigEditor({
             {/* Catalog Grid with Instant Search and Selection */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-foreground">
+                <span className="text-xs font-bold text-foreground">
                   {t.sections.availableTitle}
                 </span>
               </div>
@@ -1612,7 +1805,7 @@ function SectionConfigEditor({
                       <div
                         key={product.id}
                         onClick={() => toggleProduct(product.id)}
-                        className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition ${
+                        className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition select-none ${
                           isSelected
                             ? "border-sale bg-sale/10 shadow-xs ring-1 ring-sale"
                             : "border-border bg-card hover:border-sale/40 hover:bg-secondary/40"
@@ -1628,7 +1821,7 @@ function SectionConfigEditor({
                           {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                         </div>
 
-                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-muted">
                           <img
                             src={product.image}
                             alt={product.name}
@@ -1646,6 +1839,16 @@ function SectionConfigEditor({
                             <span className="font-bold text-sale">৳{product.price}</span>
                           </div>
                         </div>
+
+                        <span
+                          className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                            isSelected
+                              ? "bg-sale text-white"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {isSelected ? t.sections.selectedBtn : t.sections.selectBtn}
+                        </span>
                       </div>
                     );
                   })}
