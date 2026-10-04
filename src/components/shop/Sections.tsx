@@ -180,7 +180,7 @@ export function Hero() {
                 <a
                   href={s.href}
                   style={{ animationDelay: "480ms" }}
-                  className="hero-rise absolute bottom-[3.25rem] left-1/2 z-10 inline-flex -translate-x-1/2 items-center rounded-full bg-white px-5 py-2 text-[11px] font-bold uppercase tracking-wide text-foreground shadow-md backdrop-blur transition hover:scale-105 hover:bg-white/95 sm:bottom-[4.25rem] sm:px-6 sm:py-3 sm:text-sm"
+                  className="hero-rise absolute bottom-[3.25rem] left-1/2 z-10 inline-flex -translate-x-1/2 items-center rounded-full bg-sale px-5 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-sale/90 sm:bottom-[4.25rem] sm:px-6 sm:py-3 sm:text-sm"
                 >
                   {s.cta}
                 </a>
@@ -207,7 +207,7 @@ export function Hero() {
           type="button"
           aria-label={playing ? "Pause slideshow" : "Play slideshow"}
           onClick={() => setPlaying((p) => !p)}
-          className="absolute right-2 bottom-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-foreground shadow transition hover:bg-white sm:right-5 sm:bottom-6 sm:h-10 sm:w-10"
+          className="absolute right-2 bottom-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-card/90 border border-border/60 text-foreground shadow transition hover:bg-card sm:right-5 sm:bottom-6 sm:h-10 sm:w-10"
         >
           {playing ? <Pause className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
         </button>
@@ -218,7 +218,7 @@ export function Hero() {
           type="button"
           aria-label="Previous slide"
           onClick={() => go(-1)}
-          className="absolute top-1/2 left-4 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-foreground shadow transition hover:bg-white active:scale-95 sm:left-6 sm:h-12 sm:w-12"
+          className="absolute top-1/2 left-4 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-card/90 border border-border/60 text-foreground shadow transition hover:bg-sale hover:text-white hover:border-sale active:scale-95 sm:left-6 sm:h-12 sm:w-12"
         >
           <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
@@ -226,13 +226,13 @@ export function Hero() {
           type="button"
           aria-label="Next slide"
           onClick={() => go(1)}
-          className="absolute top-1/2 right-4 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-foreground shadow transition hover:bg-white active:scale-95 sm:right-6 sm:h-12 sm:w-12"
+          className="absolute top-1/2 right-4 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-card/90 border border-border/60 text-foreground shadow transition hover:bg-sale hover:text-white hover:border-sale active:scale-95 sm:right-6 sm:h-12 sm:w-12"
         >
           <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
 
         {/* Pagination + dots */}
-        <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white/90 px-4 py-1.5 shadow-sm backdrop-blur sm:bottom-6 sm:gap-4 sm:px-5">
+        <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-full bg-card/90 border border-border/60 px-4 py-1.5 shadow-sm backdrop-blur sm:bottom-6 sm:gap-4 sm:px-5">
           <div className="flex gap-1.5">
             {heroSlides.map((_, i) => (
               <button
@@ -241,7 +241,7 @@ export function Hero() {
                 aria-label={`Go to slide ${i + 1}`}
                 onClick={() => setIndex(i)}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "w-6 bg-foreground" : "w-1.5 bg-foreground/30"
+                  i === index ? "w-6 bg-sale" : "w-1.5 bg-foreground/30"
                 }`}
               />
             ))}
@@ -265,10 +265,10 @@ export function SectionHeader({ title, action }: { title: string; action?: strin
         </button>
       ) : (
         <div className="flex shrink-0 gap-2">
-          <button aria-label="Previous" className="grid h-9 w-9 place-items-center rounded-full border border-sale/30 text-sale">
+          <button aria-label="Previous" className="grid h-9 w-9 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-sale hover:text-white hover:border-sale transition shadow-xs">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button aria-label="Next" className="grid h-9 w-9 place-items-center rounded-full border border-sale/30 text-sale">
+          <button aria-label="Next" className="grid h-9 w-9 place-items-center rounded-full border border-border bg-card text-foreground hover:bg-sale hover:text-white hover:border-sale transition shadow-xs">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -324,7 +324,7 @@ export function Categories() {
                 height={700}
                 className="aspect-square w-full rounded-lg object-cover transition duration-300 group-hover:scale-105"
               />
-              <span className="mt-2 block truncate text-[11px] font-semibold text-brand-navy">
+              <span className="mt-2 block truncate text-[11px] font-semibold text-foreground">
                 {c.name}
               </span>
             </Link>
@@ -347,7 +347,7 @@ export function Categories() {
                 loading="lazy"
                 className="aspect-square w-full rounded-lg object-cover transition group-hover:scale-105"
               />
-              <span className="mt-2 block truncate text-xs sm:text-sm font-semibold text-brand-navy">
+              <span className="mt-2 block truncate text-xs sm:text-sm font-semibold text-foreground">
                 {c.name}
               </span>
             </Link>
@@ -370,7 +370,7 @@ export function Categories() {
                 loading="lazy"
                 className="aspect-square w-full rounded-lg object-cover transition group-hover:scale-105"
               />
-              <span className="mt-2 block truncate text-[11px] font-semibold text-brand-navy">
+              <span className="mt-2 block truncate text-[11px] font-semibold text-foreground">
                 {c.name}
               </span>
             </Link>

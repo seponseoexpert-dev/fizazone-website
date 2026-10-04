@@ -9,12 +9,11 @@ import { useCoupon } from "@/components/shop/useCoupon";
 import { productLinkProps, useMarketPrefix } from "@/lib/market-link";
 import { useCountry } from "@/lib/country";
 import { cn } from "@/lib/utils";
-
-const SHIPPING = 100;
-const FREE_OVER = 5000;
+import { useShippingSettings, DEFAULT_SHIPPING_SETTINGS } from "@/lib/shipping-settings";
 
 export function CartView() {
   const { items, subtotal, count, setQty, remove } = useCart();
+  const { data: shippingSettings = DEFAULT_SHIPPING_SETTINGS } = useShippingSettings();
   const { country, convert } = useCountry();
   const tk = (n: number) => {
     const v = convert(n);
@@ -31,14 +30,16 @@ export function CartView() {
   const { applied, error: promoError, loading: promoLoading, apply, clearCoupon, discount } =
     useCoupon(subtotal);
 
-  const shipping = items.length === 0 || subtotal >= FREE_OVER ? 0 : SHIPPING;
+  const freeOver = shippingSettings.free_shipping_threshold || 3000;
+  const shippingBase = shippingSettings.inside_dhaka || 80;
+  const shipping = items.length === 0 || subtotal >= freeOver ? 0 : shippingBase;
   const savings = items.reduce(
     (n, i) => n + (i.mrp && i.mrp > i.price ? (i.mrp - i.price) * i.qty : 0),
     0,
   );
   const total = Math.max(0, subtotal - discount) + shipping;
-  const remaining = Math.max(0, FREE_OVER - subtotal);
-  const progress = Math.min(100, (subtotal / FREE_OVER) * 100);
+  const remaining = Math.max(0, freeOver - subtotal);
+  const progress = Math.min(100, (subtotal / freeOver) * 100);
 
   return (
     <div className="min-h-screen bg-background pb-36 lg:pb-16">
@@ -282,7 +283,7 @@ export function CartView() {
               </div>
               {remaining > 0 && (
                 <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
-                  <dt>Free delivery over {tk(FREE_OVER)}</dt>
+                  <dt>Free delivery over {tk(freeOver)}</dt>
                   <dd>Add {tk(remaining)} more</dd>
                 </div>
               )}

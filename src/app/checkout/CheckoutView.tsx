@@ -23,8 +23,7 @@ import { placeOrder as placeOrderFn } from "@/lib/orders.functions";
 import { startEpsPayment } from "@/lib/eps.functions";
 import { useCountry } from "@/lib/country";
 import { IntlCheckout } from "@/components/shop/IntlCheckout";
-
-const DELIVERY_FEE = 100;
+import { useShippingSettings, DEFAULT_SHIPPING_SETTINGS } from "@/lib/shipping-settings";
 
 const PAYMENTS = [
   {
@@ -76,6 +75,8 @@ export function CheckoutView() {
 
 function BdCheckout() {
   const { items, subtotal, count, clear, setQty, remove } = useCart();
+  const { data: shippingSettings = DEFAULT_SHIPPING_SETTINGS } = useShippingSettings();
+  const [deliveryZone, setDeliveryZone] = useState<"inside" | "outside">("inside");
   const [coupon, setCoupon] = useState("");
   const [payment, setPayment] = useState<(typeof PAYMENTS)[number]["id"]>("cod");
   const [form, setForm] = useState({
@@ -97,8 +98,19 @@ function BdCheckout() {
     clearCoupon,
     discount,
   } = useCoupon(subtotal);
-  const shipping = DELIVERY_FEE;
-  const total = Math.max(0, subtotal - discount) + shipping;
+
+  const netSubtotal = Math.max(0, subtotal - discount);
+  const isFreeShipping =
+    shippingSettings.free_shipping_threshold > 0 &&
+    netSubtotal >= shippingSettings.free_shipping_threshold;
+
+  const standardFee =
+    deliveryZone === "inside"
+      ? shippingSettings.inside_dhaka
+      : shippingSettings.outside_dhaka;
+
+  const shipping = isFreeShipping ? 0 : standardFee;
+  const total = netSubtotal + shipping;
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -246,6 +258,56 @@ function BdCheckout() {
                     />
                     {errors["address"] && <span className="text-[11px] text-sale">{errors["address"]}</span>}
                   </Field>
+
+                  {/* Delivery Area Selection */}
+                  <div className="mt-3 rounded-xl border border-border bg-secondary/30 p-3.5">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">Delivery Area (ডেলিভারি এলাকা) *</span>
+                      {isFreeShipping && (
+                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                          Free Shipping Applied
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryZone("inside")}
+                        className={cn(
+                          "flex flex-col items-start rounded-xl border p-2.5 text-left transition",
+                          deliveryZone === "inside"
+                            ? "border-sale bg-sale/5 text-foreground shadow-xs ring-1 ring-sale/20"
+                            : "border-border bg-card text-muted-foreground hover:bg-secondary"
+                        )}
+                      >
+                        <span className="text-xs font-bold">Inside Dhaka (ঢাকা সিটি)</span>
+                        <span className="mt-1 text-xs font-semibold text-sale">
+                          {isFreeShipping ? "FREE" : `৳${shippingSettings.inside_dhaka}`}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryZone("outside")}
+                        className={cn(
+                          "flex flex-col items-start rounded-xl border p-2.5 text-left transition",
+                          deliveryZone === "outside"
+                            ? "border-sale bg-sale/5 text-foreground shadow-xs ring-1 ring-sale/20"
+                            : "border-border bg-card text-muted-foreground hover:bg-secondary"
+                        )}
+                      >
+                        <span className="text-xs font-bold">Outside Dhaka (ঢাকার বাইরে)</span>
+                        <span className="mt-1 text-xs font-semibold text-sale">
+                          {isFreeShipping ? "FREE" : `৳${shippingSettings.outside_dhaka}`}
+                        </span>
+                      </button>
+                    </div>
+                    {shippingSettings.delivery_note && (
+                      <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <Truck className="h-3.5 w-3.5 text-sale shrink-0" />
+                        {shippingSettings.delivery_note}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </section>
@@ -453,9 +515,15 @@ function BdCheckout() {
               )}
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-muted-foreground">
-                  Delivery <span className="text-[11px]">(flat rate)</span>
+                  Delivery ({deliveryZone === "inside" ? "Inside Dhaka" : "Outside Dhaka"})
                 </dt>
-                <dd className="font-semibold">৳{shipping}</dd>
+                <dd className="font-semibold">
+                  {shipping === 0 ? (
+                    <span className="text-emerald-600 font-bold">Free</span>
+                  ) : (
+                    `৳${shipping}`
+                  )}
+                </dd>
               </div>
               <div className="mt-2 flex items-center justify-between gap-3 border-t border-border pt-3 text-lg">
                 <dt className="font-extrabold">Total</dt>

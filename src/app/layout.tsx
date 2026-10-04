@@ -17,7 +17,9 @@ export const metadata: Metadata = {
     site: "@faizazone",
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/api/favicon",
+    shortcut: "/api/favicon",
+    apple: "/api/favicon",
   },
 };
 
@@ -29,6 +31,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var t = localStorage.getItem('fz_theme');
+                if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

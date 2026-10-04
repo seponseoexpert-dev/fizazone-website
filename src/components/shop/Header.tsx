@@ -28,6 +28,7 @@ import { useCountry, type CountryCode } from "@/lib/country";
 import { useActiveCountries } from "@/lib/active-countries";
 import { FlagIcon } from "@/components/shop/FlagIcon";
 import { useSiteBranding } from "@/lib/site-branding";
+import { useTheme } from "@/lib/theme";
 
 import { MegaMenuPanel, megaTabs } from "@/components/shop/MegaMenu";
 
@@ -220,7 +221,7 @@ function LocationSheet({
 
 export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [dark, setDark] = useState(false);
+  const { dark, toggleDark } = useTheme();
   const [openTab, setOpenTab] = useState<string | null>(null);
   const [locationOpen, setLocationOpen] = useState(false);
   const [mobileLocationOpen, setMobileLocationOpen] = useState(false);
@@ -239,10 +240,6 @@ export function Header() {
     if (first) setCountry(first.code);
   }, [activeCountries, country.code, setCountry]);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-  }, [dark]);
-
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
       {/* Desktop / laptop header */}
@@ -251,11 +248,13 @@ export function Header() {
           {/* Logo */}
           <Link to={`/${country.code || "bd"}`} className="shrink-0 flex items-center">
             {branding?.logo_url ? (
-              <img
-                src={branding.logo_url}
-                alt={branding.site_title || "Faiza Zone"}
-                className="h-10 sm:h-12 w-auto max-h-12 max-w-[200px] object-contain object-left transition-opacity hover:opacity-90"
-              />
+              <div className="dark:bg-white/95 dark:px-2.5 dark:py-1 dark:rounded-xl dark:shadow-xs transition">
+                <img
+                  src={branding.logo_url}
+                  alt={branding.site_title || "Faiza Zone"}
+                  className="h-9 sm:h-11 w-auto max-h-12 max-w-[200px] object-contain object-left transition-opacity hover:opacity-90"
+                />
+              </div>
             ) : (
               <div className="leading-none">
                 <span className="font-display text-3xl font-extrabold tracking-tight text-sale">
@@ -297,7 +296,7 @@ export function Header() {
               </span>
             </a>
 
-            <IconButton label="Toggle dark mode" onClick={() => setDark((d) => !d)}>
+            <IconButton label="Toggle dark mode" onClick={() => toggleDark()}>
               {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </IconButton>
             <Link
@@ -395,11 +394,13 @@ export function Header() {
       <div className="shop-container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2.5 lg:hidden">
         <Link to={`/${country.code || "bd"}`} className="min-w-0 flex items-center">
           {branding?.logo_url ? (
-            <img
-              src={branding.logo_url}
-              alt={branding.site_title || "Faiza Zone"}
-              className="h-8 sm:h-9 w-auto max-h-9 max-w-[140px] sm:max-w-[170px] object-contain object-left transition-opacity hover:opacity-90"
-            />
+            <div className="dark:bg-white/95 dark:px-2 dark:py-0.5 dark:rounded-lg dark:shadow-xs transition">
+              <img
+                src={branding.logo_url}
+                alt={branding.site_title || "Faiza Zone"}
+                className="h-8 sm:h-9 w-auto max-h-9 max-w-[140px] sm:max-w-[170px] object-contain object-left transition-opacity hover:opacity-90"
+              />
+            </div>
           ) : (
             <div className="leading-none">
               <span className="font-display text-2xl font-extrabold tracking-tight text-sale">
@@ -424,7 +425,7 @@ export function Header() {
           <button
             type="button"
             aria-label="Toggle dark mode"
-            onClick={() => setDark((d) => !d)}
+            onClick={() => toggleDark()}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border bg-background text-foreground active:scale-95 transition-transform"
           >
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
