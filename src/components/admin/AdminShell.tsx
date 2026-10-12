@@ -75,6 +75,7 @@ const NAV: NavGroup[] = [
     items: [
       { label: "Homepage Banners", icon: ImageIcon, to: "/admin/banners" },
       { label: "Homepage Sections", icon: LayoutDashboard, to: "/admin/homepage" },
+      { label: "Mega Menu", icon: Menu, to: "/admin/mega-menu" },
     ],
   },
   {

@@ -59,7 +59,12 @@ export function CategorySheet({ open, onClose }: { open: boolean; onClose: () =>
 
         <div className="mt-3 divide-y divide-border overflow-hidden rounded-2xl bg-card shadow-[var(--shadow-card)]">
           {categories.map((cat) => {
-            const meta = categoryMeta[cat.name]!;
+            const meta = categoryMeta[cat.name] || {
+              icon: Shirt,
+              subtitle: "Explore collection",
+              bg: "var(--cat-men-bg)",
+              fg: "var(--cat-men-fg)",
+            };
             const Icon = meta.icon;
             return (
               <Link

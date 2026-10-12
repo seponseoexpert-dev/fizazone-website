@@ -13,6 +13,11 @@ import {
   Search,
   Trash2,
   X,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +25,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { isAdmin } from "@/lib/admin-products";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { calculateCategorySeoScore, generateCategoryAiSeo } from "@/lib/seo-scoring";
 
 import {
   COUNTRY_TABS,
@@ -366,6 +372,39 @@ function CategoryModal({
   const faqs = current.faqs ?? [];
   const setFaqs = (next: typeof faqs) => patch({ faqs: next });
 
+  const [showSeoAudit, setShowSeoAudit] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+
+  const seoAudit = useMemo(() => {
+    return calculateCategorySeoScore({
+      title: current.seo_title,
+      description: current.seo_meta_description,
+      slug: current.slug || baseSlug,
+      name: current.name || baseSlug,
+      shortDesc: current.short_description,
+      bannerImage: current.banner_image,
+      faqsCount: (current.faqs ?? []).length,
+    });
+  }, [current, baseSlug]);
+
+  function handleAiGenerateSeo() {
+    setIsAiGenerating(true);
+    try {
+      const generated = generateCategoryAiSeo(current.name || baseSlug, tab);
+      patch({
+        seo_title: generated.seoTitle,
+        seo_meta_description: generated.seoMetaDescription,
+        short_description: current.short_description || generated.shortDescription,
+        faqs: current.faqs && current.faqs.length > 0 ? current.faqs : generated.suggestedFaqs,
+      });
+      toast.success("AI generated SEO Title, Meta Description & FAQs!");
+    } catch {
+      toast.error("Could not generate AI SEO");
+    } finally {
+      setIsAiGenerating(false);
+    }
+  }
+
   async function save() {
     const slug = slugify(baseSlug || map["bd"]!.name);
     if (!slug) {
@@ -550,46 +589,163 @@ function CategoryModal({
             )}
           </div>
 
-          <CountedField
-            label="SEO Title"
-            value={current.seo_title}
-            onChange={(v) => patch({ seo_title: v })}
-            max={60}
-          />
-          <CountedField
-            label="Permalink"
-            value={current.slug}
-            onChange={(v) => patch({ slug: v })}
-            max={75}
-            placeholder="men"
-          />
-          <div>
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Meta Description</label>
-              <span
-                className={`text-xs ${
-                  current.seo_meta_description.length > 160
-                    ? "text-destructive"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {current.seo_meta_description.length} / 160
-              </span>
-            </div>
-            <textarea
-              value={current.seo_meta_description}
-              onChange={(e) => patch({ seo_meta_description: e.target.value })}
-              rows={3}
-              className="mt-1 w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-sale"
-            />
-          </div>
+          {/* Intelligent Category SEO System */}
+          <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-xs">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/80 pb-3">
+              <div>
+                <h3 className="font-display text-sm font-bold text-foreground flex items-center gap-2">
+                  <Search className="h-4 w-4 text-sale" />
+                  Category SEO & Search Optimization
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Optimize title, meta description & keywords for Google rankings in {tab.toUpperCase()}
+                </p>
+              </div>
 
-          <p className="rounded-lg bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
-            URL preview:{" "}
-            <span className="font-semibold text-foreground">
-              /{tab}/categories?category={slugify(current.slug || current.name || baseSlug) || "…"}
-            </span>
-          </p>
+              <button
+                type="button"
+                onClick={handleAiGenerateSeo}
+                disabled={isAiGenerating}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3 text-xs font-semibold shadow-xs transition-all active:scale-95 disabled:opacity-60"
+              >
+                {isAiGenerating ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                Generate with AI
+              </button>
+            </div>
+
+            {/* Live SEO Score Gauge */}
+            <div className="mt-3.5 rounded-xl border border-border/80 bg-background/80 p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-display text-sm font-extrabold text-foreground">
+                    {seoAudit.score}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                        Live SEO Score
+                      </span>
+                      <span
+                        className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase ${seoAudit.badgeColor}`}
+                      >
+                        {seoAudit.rating}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {seoAudit.checks.filter((c) => c.passed).length} of {seoAudit.checks.length} audits passed
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowSeoAudit(!showSeoAudit)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-sale hover:underline"
+                >
+                  {showSeoAudit ? "Hide Checklist" : "Audit Checklist"}
+                  {showSeoAudit ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className={`h-full transition-all duration-300 ${
+                    seoAudit.score >= 85
+                      ? "bg-emerald-500"
+                      : seoAudit.score >= 70
+                        ? "bg-blue-500"
+                        : seoAudit.score >= 50
+                          ? "bg-amber-500"
+                          : "bg-rose-500"
+                  }`}
+                  style={{ width: `${seoAudit.score}%` }}
+                />
+              </div>
+
+              {/* Expandable Audit Checklist */}
+              {showSeoAudit && (
+                <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
+                  {seoAudit.checks.map((check) => (
+                    <div
+                      key={check.id}
+                      className="flex items-start gap-2 rounded-lg bg-secondary/40 p-2 text-xs"
+                    >
+                      {check.passed ? (
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className={`font-semibold ${check.passed ? "text-foreground" : "text-amber-700 dark:text-amber-400"}`}>
+                            {check.label}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {check.score}/{check.maxScore} pts
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{check.tip}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <CountedField
+                label="SEO Title"
+                value={current.seo_title}
+                onChange={(v) => patch({ seo_title: v })}
+                max={60}
+                placeholder={`Buy ${current.name || baseSlug} Online | Faiza Zone`}
+              />
+
+              <CountedField
+                label="Permalink (Slug)"
+                value={current.slug}
+                onChange={(v) => patch({ slug: v })}
+                max={75}
+                placeholder="men"
+              />
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Meta Description</label>
+                  <span
+                    className={`text-xs ${
+                      current.seo_meta_description.length > 160
+                        ? "text-destructive font-bold"
+                        : current.seo_meta_description.length >= 120
+                          ? "text-emerald-600 dark:text-emerald-400 font-semibold"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {current.seo_meta_description.length} / 160
+                  </span>
+                </div>
+                <textarea
+                  value={current.seo_meta_description}
+                  onChange={(e) => patch({ seo_meta_description: e.target.value })}
+                  rows={3}
+                  placeholder={`Explore trending ${current.name || baseSlug} collection with premium quality, authentic designs and fast delivery...`}
+                  className="mt-1 w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-sale"
+                />
+              </div>
+
+              <p className="rounded-lg bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
+                Google Search URL Preview:{" "}
+                <span className="font-semibold text-foreground">
+                  /{tab}/categories?category={slugify(current.slug || current.name || baseSlug) || "…"}
+                </span>
+              </p>
+            </div>
+          </div>
 
           <ImageUploader
             label="Image"

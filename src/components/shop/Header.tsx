@@ -30,7 +30,7 @@ import { FlagIcon } from "@/components/shop/FlagIcon";
 import { useSiteBranding } from "@/lib/site-branding";
 import { useTheme } from "@/lib/theme";
 
-import { MegaMenuPanel, megaTabs } from "@/components/shop/MegaMenu";
+import { MegaMenuPanel, megaTabs, useMegaMenuConfig } from "@/components/shop/MegaMenu";
 
 function IconButton({
   label,
@@ -225,7 +225,11 @@ export function Header() {
   const [openTab, setOpenTab] = useState<string | null>(null);
   const [locationOpen, setLocationOpen] = useState(false);
   const [mobileLocationOpen, setMobileLocationOpen] = useState(false);
-  const activeTab = megaTabs.find((t) => t.label === openTab);
+  const { items: dynamicMegaTabs } = useMegaMenuConfig();
+  const visibleTabs = (dynamicMegaTabs && dynamicMegaTabs.length > 0 ? dynamicMegaTabs : megaTabs).filter(
+    (t) => t.is_active !== false
+  );
+  const activeTab = visibleTabs.find((t) => t.label === openTab);
   const { country, setCountry } = useCountry();
   const { count } = useCart();
   const activeCountries = useActiveCountries();
@@ -363,9 +367,9 @@ export function Header() {
           onMouseLeave={() => setOpenTab(null)}
         >
           <div className="shop-container flex items-center justify-center gap-10 py-3">
-            {megaTabs.map((tab) => (
+            {visibleTabs.map((tab) => (
               <Link
-                key={tab.label}
+                key={tab.id || tab.label}
                 to={`/${country.code || "bd"}/categories`}
                 search={{ category: tab.category }}
                 onMouseEnter={() => setOpenTab(tab.label)}
