@@ -16,78 +16,92 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://faizazone.com"),
-  title: {
-    default: "Faiza Zone — Fashion, Footwear & Accessories Online",
-    template: "%s | Faiza Zone",
-  },
-  description:
-    "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone. Authentic quality, flash sales up to 50% off with fast worldwide delivery.",
-  keywords: [
-    "Faiza Zone",
-    "FaizaZone",
-    "online shopping BD",
-    "fashion store bangladesh",
-    "kurti collection",
-    "panjabi",
-    "hoodie",
-    "sneakers",
-    "ethnic wear",
-    "mens fashion",
-    "womens fashion",
-  ],
-  authors: [{ name: "Faiza Zone", url: "https://faizazone.com" }],
-  creator: "Faiza Zone",
-  publisher: "Faiza Zone",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://faizazone.com",
-    siteName: "Faiza Zone",
-    title: "Faiza Zone — Fashion, Footwear & Accessories Online",
-    description:
-      "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone with fast worldwide delivery.",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Faiza Zone Online Fashion Store",
-      },
+import { fetchServerSiteBranding } from "@/lib/site-branding-server";
+import { fetchSeoMetaForPage } from "@/lib/seo";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [branding, customSeo] = await Promise.all([
+    fetchServerSiteBranding(),
+    fetchSeoMetaForPage("home", "home", "bd"),
+  ]);
+
+  const siteTitle = customSeo?.meta_title || branding.site_title || "Faiza Zone — Fashion, Footwear & Accessories Online";
+  const siteDesc =
+    customSeo?.meta_description ||
+    branding.tagline ||
+    "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone. Authentic quality, flash sales up to 50% off with fast worldwide delivery.";
+  const favicon = branding.favicon_url || "/api/favicon";
+
+  return {
+    metadataBase: new URL("https://faizazone.com"),
+    title: {
+      default: siteTitle,
+      template: "%s | Faiza Zone",
+    },
+    description: siteDesc,
+    keywords: [
+      "Faiza Zone",
+      "FaizaZone",
+      "online shopping BD",
+      "fashion store bangladesh",
+      "kurti collection",
+      "panjabi",
+      "hoodie",
+      "sneakers",
+      "ethnic wear",
+      "mens fashion",
+      "womens fashion",
     ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Faiza Zone — Fashion, Footwear & Accessories Online",
-    description:
-      "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone.",
-    site: "@faizazone",
-    creator: "@faizazone",
-    images: ["/og-image.jpg"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+    authors: [{ name: "Faiza Zone", url: "https://faizazone.com" }],
+    creator: "Faiza Zone",
+    publisher: "Faiza Zone",
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false,
+    },
+    openGraph: {
+      type: "website",
+      locale: "en_US",
+      url: "https://faizazone.com",
+      siteName: "Faiza Zone",
+      title: siteTitle,
+      description: siteDesc,
+      images: [
+        {
+          url: branding.logo_url || "/og-image.jpg",
+          width: 1200,
+          height: 630,
+          alt: "Faiza Zone Online Fashion Store",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: siteTitle,
+      description: siteDesc,
+      site: "@faizazone",
+      creator: "@faizazone",
+      images: [branding.logo_url || "/og-image.jpg"],
+    },
+    robots: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
-  },
-  icons: {
-    icon: "/api/favicon",
-    shortcut: "/api/favicon",
-    apple: "/api/favicon",
-  },
-};
+    icons: {
+      icon: favicon,
+      shortcut: favicon,
+      apple: favicon,
+    },
+  };
+}
 
 const organizationSchema = {
   "@context": "https://schema.org",
@@ -135,8 +149,6 @@ const organizationSchema = {
     },
   ],
 };
-
-import { fetchServerSiteBranding } from "@/lib/site-branding-server";
 
 export default async function RootLayout({
   children,

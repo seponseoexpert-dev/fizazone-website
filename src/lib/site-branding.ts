@@ -27,16 +27,7 @@ export function useSiteBranding(initialData?: SiteBranding) {
     queryKey: ["site-branding"],
     queryFn: fetchSiteBranding,
     staleTime: 60 * 1000,
-    initialData,
-    placeholderData: () => {
-      if (typeof window !== "undefined") {
-        try {
-          const raw = localStorage.getItem("fz_site_branding");
-          if (raw) return { ...DEFAULT_BRANDING, ...JSON.parse(raw) };
-        } catch {}
-      }
-      return DEFAULT_BRANDING;
-    },
+    initialData: initialData ?? (() => queryClient.getQueryData<SiteBranding>(["site-branding"])),
     refetchOnWindowFocus: true,
   });
 

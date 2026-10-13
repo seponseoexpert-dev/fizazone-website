@@ -5,6 +5,7 @@ import { fetchSeoMetaForPage, buildMarketHreflang } from "@/lib/seo";
 import { fetchServerHomepageConfig } from "@/lib/homepage-config-server";
 import { fetchSiteBanners } from "@/lib/site-content";
 import { fetchShopProducts } from "@/lib/catalog";
+import { fetchServerSiteBranding } from "@/lib/site-branding-server";
 
 export const revalidate = 60;
 
@@ -70,10 +71,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootPage() {
-  const [initialConfig, initialBanners, initialProducts] = await Promise.all([
+  const [initialConfig, initialBanners, initialProducts, initialBranding] = await Promise.all([
     fetchServerHomepageConfig(),
     fetchSiteBanners("bd"),
     fetchShopProducts("bd"),
+    fetchServerSiteBranding(),
   ]);
 
   return (
@@ -81,6 +83,7 @@ export default async function RootPage() {
       initialConfig={initialConfig}
       initialBanners={initialBanners}
       initialProducts={initialProducts}
+      initialBranding={initialBranding}
     />
   );
 }

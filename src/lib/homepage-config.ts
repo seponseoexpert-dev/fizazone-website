@@ -14,6 +14,8 @@ import {
   type CategoriesSectionConfig,
   type PromoStripSectionConfig,
   type MidBannerSectionConfig,
+  type FaqItem,
+  type FaqSectionConfig,
 } from "./homepage-config-server";
 
 export {
@@ -27,6 +29,8 @@ export {
   type CategoriesSectionConfig,
   type PromoStripSectionConfig,
   type MidBannerSectionConfig,
+  type FaqItem,
+  type FaqSectionConfig,
 };
 
 export async function fetchHomepageConfig(): Promise<HomepageConfig> {
@@ -70,9 +74,8 @@ export function useHomepageConfig(initialData?: HomepageConfig) {
   return useQuery({
     queryKey: ["homepage-config"],
     queryFn: fetchHomepageConfig,
-    staleTime: 30_000,
+    staleTime: 60_000,
     initialData,
-    placeholderData: initialData || DEFAULT_HOMEPAGE_CONFIG,
     refetchOnWindowFocus: true,
   });
 }

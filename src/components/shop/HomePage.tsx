@@ -13,10 +13,12 @@ import {
 import { BottomNav } from "@/components/shop/BottomNav";
 import { DynamicProductSection } from "@/components/shop/DynamicProductSection";
 import { HomeSeoArticle } from "@/components/shop/HomeSeoArticle";
+import { HomeFaqSection } from "@/components/shop/HomeFaqSection";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useHomepageConfig } from "@/lib/homepage-config";
 import type { HomepageConfig } from "@/lib/homepage-config";
+import type { SiteBranding } from "@/lib/site-branding-server";
 import type { Banner } from "@/lib/content";
 import type { ShopProduct } from "@/lib/catalog";
 import { trendy, ethnic, popular, flashSale, allProducts, type Product } from "./data";
@@ -25,10 +27,12 @@ export function HomePage({
   initialConfig,
   initialBanners,
   initialProducts,
+  initialBranding,
 }: {
   initialConfig?: HomepageConfig;
   initialBanners?: Banner[];
   initialProducts?: ShopProduct[];
+  initialBranding?: SiteBranding;
 } = {}) {
   const { data: config } = useHomepageConfig(initialConfig);
 
@@ -158,7 +162,7 @@ export function HomePage({
 
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
-      <Header />
+      <Header initialBranding={initialBranding} />
       <main>
         <h1 className="sr-only">
           Faiza Zone — Premium Fashion, Traditional Wear, Footwear & Accessories Online Store
@@ -246,6 +250,9 @@ export function HomePage({
 
         {/* 11. High-Ranking SEO Editorial & Shopping Guide */}
         <HomeSeoArticle />
+
+        {/* 12. Frequently Asked Questions (FAQ) Section */}
+        <HomeFaqSection faqConfig={config?.faq} />
       </main>
       <Footer />
       <BottomNav />

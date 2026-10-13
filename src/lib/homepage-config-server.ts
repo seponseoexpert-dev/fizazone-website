@@ -71,6 +71,20 @@ export type MidBannerSectionConfig = {
   banners: PromoBannerItem[];
 };
 
+export type FaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+  is_active: boolean;
+};
+
+export type FaqSectionConfig = {
+  enabled: boolean;
+  title: string;
+  subtitle?: string;
+  items: FaqItem[];
+};
+
 export type HomepageConfig = {
   hero_enabled: boolean;
   categories: CategoriesSectionConfig;
@@ -82,6 +96,7 @@ export type HomepageConfig = {
   popular: ProductSectionConfig;
   extra_sections: ProductSectionConfig[];
   features_enabled: boolean;
+  faq?: FaqSectionConfig;
 };
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
@@ -208,6 +223,43 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   },
   extra_sections: [],
   features_enabled: true,
+  faq: {
+    enabled: true,
+    title: "Frequently Asked Questions (FAQ)",
+    subtitle: "Everything you need to know about shopping, delivery, payments & quality at Faiza Zone",
+    items: [
+      {
+        id: "faq-1",
+        question: "How long does delivery take for domestic and international orders?",
+        answer: "Inside Dhaka, standard delivery takes 24–48 hours (express same-day available). Nationwide delivery across Bangladesh takes 2–3 business days. For international orders (USA, UK, Canada, Australia), DHL/FedEx express delivery takes 5–8 business days with real-time end-to-end tracking.",
+        is_active: true,
+      },
+      {
+        id: "faq-2",
+        question: "Are all products at Faiza Zone authentic and quality checked?",
+        answer: "Yes, 100% authentic. Every garment, accessory, and footwear item undergoes strict 3-tier quality inspection before dispatch. Our fabrics are sourced directly from certified textile mills and comply with international colorfastness and shrinkage standards.",
+        is_active: true,
+      },
+      {
+        id: "faq-3",
+        question: "What payment methods are supported?",
+        answer: "We support Cash on Delivery (COD) inside Bangladesh, bKash, Nagad, Rocket, Upay, Visa, MasterCard, and American Express. For international shoppers, we accept global credit/debit cards via secure 256-bit encrypted checkout.",
+        is_active: true,
+      },
+      {
+        id: "faq-4",
+        question: "Can I exchange or return an item if the size does not fit?",
+        answer: "Absolutely. We offer a hassle-free 7-day return and exchange policy. Simply initiate a return request from your account or contact our customer support via WhatsApp or email with your order ID.",
+        is_active: true,
+      },
+      {
+        id: "faq-5",
+        question: "How do I choose the right size for Kurtis, Panjabis, or Shoes?",
+        answer: "Each product page contains a detailed Size Chart with chest, length, shoulder, and sleeve measurements in inches and centimeters. If you are between sizes, we recommend sizing up for regular fit or checking our interactive Size Guide.",
+        is_active: true,
+      },
+    ],
+  },
 };
 
 export async function fetchServerHomepageConfig(): Promise<HomepageConfig> {
@@ -230,6 +282,13 @@ export async function fetchServerHomepageConfig(): Promise<HomepageConfig> {
         ethnic: { ...DEFAULT_HOMEPAGE_CONFIG.ethnic, ...(val.ethnic || {}) },
         flash_sale: { ...DEFAULT_HOMEPAGE_CONFIG.flash_sale, ...(val.flash_sale || {}) },
         popular: { ...DEFAULT_HOMEPAGE_CONFIG.popular, ...(val.popular || {}) },
+        faq: {
+          ...DEFAULT_HOMEPAGE_CONFIG.faq!,
+          ...(val.faq || {}),
+          items: Array.isArray(val.faq?.items) && val.faq.items.length > 0
+            ? val.faq.items
+            : DEFAULT_HOMEPAGE_CONFIG.faq!.items,
+        },
       };
     }
   } catch (err) {

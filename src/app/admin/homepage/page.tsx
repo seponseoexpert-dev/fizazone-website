@@ -1,24 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@/components/ui/link";
 import {
+  ArrowDown,
+  ArrowUp,
   Boxes,
   Check,
   CheckSquare,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Code2,
+  ExternalLink,
   Eye,
   Flame,
   Globe,
   Grid,
+  HelpCircle,
   Image as ImageIcon,
   Layers,
   LayoutDashboard,
   Loader2,
   Megaphone,
+  Pencil,
   Plus,
   RotateCcw,
   Save,
@@ -45,7 +52,10 @@ import {
   type PromoBannerItem,
   type ProductSectionConfig,
   type ProductSectionLayout,
+  type FaqItem,
+  type FaqSectionConfig,
 } from "@/lib/homepage-config";
+import { fetchSeoMetaForPage, saveSeoMeta, type SeoMetaRow } from "@/lib/seo";
 import { allProducts, categories as defaultCategories, type Product } from "@/components/shop/data";
 import { getImageSrc } from "@/lib/utils";
 
@@ -80,6 +90,8 @@ const DICT = {
       mid_banner: "Promo Banner",
       popular: "Most Popular Products",
       extra_sections: "Custom Sections",
+      faq: "Homepage FAQs",
+      seo: "SEO Meta",
     },
     status: {
       active: "Active",
@@ -197,6 +209,8 @@ const DICT = {
       mid_banner: "প্রমোশনাল ব্যানার",
       popular: "জনপ্রিয় প্রোডাক্ট",
       extra_sections: "কাস্টম সেকশন",
+      faq: "FAQ (প্রশ্নোত্তর)",
+      seo: "SEO মেটাডাটা",
     },
     status: {
       active: "চালু",
@@ -318,10 +332,13 @@ type ActiveTab =
   | "ethnic"
   | "mid_banner"
   | "popular"
-  | "extra_sections";
+  | "extra_sections"
+  | "faq"
+  | "seo";
 
-export default function AdminHomepageStudioPage() {
+function AdminHomepageStudioPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -333,6 +350,25 @@ export default function AdminHomepageStudioPage() {
 
   const t = DICT[lang];
   const tabsScrollRef = useRef<HTMLDivElement>(null);
+
+  // Sync activeTab from ?tab= query param if provided
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab");
+    if (
+      tabParam === "faq" ||
+      tabParam === "seo" ||
+      tabParam === "categories" ||
+      tabParam === "promo_strip" ||
+      tabParam === "trending" ||
+      tabParam === "flash_sale" ||
+      tabParam === "ethnic" ||
+      tabParam === "mid_banner" ||
+      tabParam === "popular" ||
+      tabParam === "extra_sections"
+    ) {
+      setActiveTab(tabParam as ActiveTab);
+    }
+  }, [searchParams]);
 
   const scrollTabs = (dir: "left" | "right") => {
     if (tabsScrollRef.current) {
@@ -640,6 +676,21 @@ export default function AdminHomepageStudioPage() {
               onClick={() => setActiveTab("extra_sections")}
               icon={<Boxes className="h-4 w-4" />}
               label={t.tabs.extra_sections}
+            />
+            <TabButton
+              active={activeTab === "faq"}
+              onClick={() => setActiveTab("faq")}
+              icon={<HelpCircle className="h-4 w-4" />}
+              label={t.tabs.faq}
+              badge={config.faq?.enabled !== false ? `${config.faq?.items?.filter((i) => i.is_active).length ?? 0}` : t.status.off}
+              badgeTone={config.faq?.enabled !== false ? "blue" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "seo"}
+              onClick={() => setActiveTab("seo")}
+              icon={<Search className="h-4 w-4" />}
+              label={t.tabs.seo}
+              badgeTone="amber"
             />
           </div>
 
@@ -1534,8 +1585,41 @@ export default function AdminHomepageStudioPage() {
             />
           </div>
         )}
+
+        {/* ========================================================================= */}
+        {/* TAB 7: FAQ MANAGEMENT                                                      */}
+        {/* ========================================================================= */}
+        {activeTab === "faq" && (
+          <FaqTabEditor
+            lang={lang}
+            faq={config.faq || DEFAULT_HOMEPAGE_CONFIG.faq!}
+            onUpdate={(updatedFaq) => setConfig((prev) => ({ ...prev, faq: updatedFaq }))}
+          />
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 8: SEO META MANAGEMENT                                                 */}
+        {/* ========================================================================= */}
+        {activeTab === "seo" && <SeoMetaQuickEditor lang={lang} />}
       </div>
     </AdminShell>
+  );
+}
+
+export default function AdminHomepageStudioPage() {
+  return (
+    <Suspense
+      fallback={
+        <AdminShell>
+          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-sale" />
+            <p className="text-sm font-medium text-muted-foreground">Loading Homepage Studio...</p>
+          </div>
+        </AdminShell>
+      }
+    >
+      <AdminHomepageStudioPageContent />
+    </Suspense>
   );
 }
 
@@ -2067,3 +2151,758 @@ function TabButton({
     </button>
   );
 }
+
+/* ========================================================================= */
+/* TAB 7: FAQ SECTION EDITOR COMPONENT                                        */
+/* ========================================================================= */
+function FaqTabEditor({
+  lang,
+  faq,
+  onUpdate,
+}: {
+  lang: Lang;
+  faq: FaqSectionConfig;
+  onUpdate: (updated: FaqSectionConfig) => void;
+}) {
+  const [editingItem, setEditingItem] = useState<FaqItem | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showSchema, setShowSchema] = useState(false);
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newAnswer, setNewAnswer] = useState("");
+  const [newActive, setNewActive] = useState(true);
+
+  const items = faq.items || [];
+
+  const handleToggle = () => {
+    onUpdate({ ...faq, enabled: !faq.enabled });
+  };
+
+  const handleAddItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQuestion.trim() || !newAnswer.trim()) {
+      toast.error(lang === "bn" ? "প্রশ্ন ও উত্তর উভয়ই পূরণ করুন" : "Please provide both question and answer");
+      return;
+    }
+
+    const newItem: FaqItem = {
+      id: `faq-${Date.now()}`,
+      question: newQuestion.trim(),
+      answer: newAnswer.trim(),
+      is_active: newActive,
+    };
+
+    onUpdate({ ...faq, items: [...items, newItem] });
+    setNewQuestion("");
+    setNewAnswer("");
+    setNewActive(true);
+    setShowAddModal(false);
+    toast.success(lang === "bn" ? "নতুন FAQ যোগ হয়েছে! উপরে 'Save All Changes' বাটনে ক্লিক করুন।" : "FAQ added! Click 'Save All Changes' above.");
+  };
+
+  const handleUpdateItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    const nextItems = items.map((it) => (it.id === editingItem.id ? editingItem : it));
+    onUpdate({ ...faq, items: nextItems });
+    setEditingItem(null);
+    toast.success(lang === "bn" ? "FAQ আপডেট হয়েছে! উপরে 'Save All Changes' বাটনে ক্লিক করুন।" : "FAQ updated! Click 'Save All Changes' above.");
+  };
+
+  const handleDeleteItem = (id: string) => {
+    if (!window.confirm(lang === "bn" ? "এই প্রশ্নটি ডিলিট করতে চান?" : "Delete this question?")) return;
+    const nextItems = items.filter((it) => it.id !== id);
+    onUpdate({ ...faq, items: nextItems });
+    toast.success(lang === "bn" ? "FAQ ডিলিট হয়েছে!" : "FAQ deleted!");
+  };
+
+  const handleMove = (index: number, direction: "up" | "down") => {
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= items.length) return;
+    const next = [...items];
+    const [moved] = next.splice(index, 1);
+    if (!moved) return;
+    next.splice(target, 0, moved);
+    onUpdate({ ...faq, items: next });
+  };
+
+  const handleToggleActive = (id: string) => {
+    const next = items.map((it) => (it.id === id ? { ...it, is_active: !it.is_active } : it));
+    onUpdate({ ...faq, items: next });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Settings Card */}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs space-y-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-sale/10 p-1.5 text-sale">
+                <HelpCircle className="h-4 w-4" />
+              </span>
+              <h2 className="text-base font-bold text-foreground">
+                {lang === "bn" ? "হোমপেজ FAQ (প্রশ্নোত্তর) নিয়ন্ত্রণ" : "Homepage FAQ Management"}
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "হোমপেজে এসইও আর্টিকেলের ঠিক নিচে প্রদর্শিত প্রশ্নোত্তর কাস্টমাইজ করুন।"
+                : "Customize questions & answers rendered directly below the SEO article on the homepage."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-foreground">
+              {faq.enabled
+                ? lang === "bn"
+                  ? "সেকশন চালু"
+                  : "Section Enabled"
+                : lang === "bn"
+                  ? "সেকশন বন্ধ"
+                  : "Section Disabled"}
+            </span>
+            <button
+              type="button"
+              onClick={handleToggle}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                faq.enabled ? "bg-sale" : "bg-muted"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                  faq.enabled ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
+              {lang === "bn" ? "সেকশন শিরোনাম" : "Section Heading"}
+            </label>
+            <input
+              type="text"
+              value={faq.title}
+              onChange={(e) => onUpdate({ ...faq, title: e.target.value })}
+              placeholder="Frequently Asked Questions (FAQ)"
+              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
+              {lang === "bn" ? "সেকশন উপ-শিরোনাম / বিবরণ" : "Section Subtitle / Description"}
+            </label>
+            <input
+              type="text"
+              value={faq.subtitle || ""}
+              onChange={(e) => onUpdate({ ...faq, subtitle: e.target.value })}
+              placeholder="Got questions? We've got answers."
+              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/60">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>
+              {lang === "bn" ? "মোট প্রশ্ন:" : "Total Questions:"} <strong>{items.length}</strong>
+            </span>
+            <span>•</span>
+            <span className="text-emerald-600 font-semibold">
+              {items.filter((i) => i.is_active).length} {lang === "bn" ? "সক্রিয়" : "Active on store"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSchema((v) => !v)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground hover:bg-secondary"
+            >
+              <Code2 className="h-3.5 w-3.5" />
+              <span>{lang === "bn" ? "গুগল স্কিমা প্রিভিউ" : "Google Schema"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-sale px-3 text-xs font-bold text-white shadow-xs hover:bg-sale/90"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{lang === "bn" ? "নতুন প্রশ্ন যোগ করুন" : "Add Question"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Google Schema Box */}
+        {showSchema && (
+          <div className="rounded-xl border border-sale/30 bg-sale/5 p-4 text-xs">
+            <div className="flex items-center justify-between pb-2 font-bold text-sale">
+              <span>Google FAQPage JSON-LD Schema (Auto-generated)</span>
+              <button onClick={() => setShowSchema(false)}>
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <pre className="max-h-52 overflow-y-auto rounded-lg bg-background p-3 text-[11px] font-mono text-foreground">
+              {JSON.stringify(
+                {
+                  "@context": "https://schema.org",
+                  "@type": "FAQPage",
+                  mainEntity: items
+                    .filter((i) => i.is_active)
+                    .map((i) => ({
+                      "@type": "Question",
+                      name: i.question,
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: i.answer,
+                      },
+                    })),
+                },
+                null,
+                2
+              )}
+            </pre>
+          </div>
+        )}
+      </div>
+
+      {/* Items List */}
+      <div className="space-y-3">
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
+            <HelpCircle className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-2 text-sm font-semibold text-foreground">
+              {lang === "bn" ? "কোনো প্রশ্ন যোগ করা হয়নি" : "No questions added yet"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {lang === "bn"
+                ? "নতুন প্রশ্ন যোগ করতে 'নতুন প্রশ্ন যোগ করুন' বাটনে ক্লিক করুন।"
+                : "Click 'Add Question' to create your first FAQ."}
+            </p>
+          </div>
+        ) : (
+          items.map((item, index) => (
+            <div
+              key={item.id}
+              className={`rounded-xl border bg-card p-4 transition ${
+                item.is_active ? "border-border shadow-xs hover:border-sale/40" : "border-dashed border-border/70 opacity-60"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-secondary text-xs font-bold text-foreground">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm text-foreground">{item.question}</h3>
+                      {!item.is_active && (
+                        <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                          {lang === "bn" ? "লুকানো" : "Hidden"}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+                      {item.answer}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => handleMove(index, "up")}
+                    className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
+                  >
+                    <ArrowUp className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === items.length - 1}
+                    onClick={() => handleMove(index, "down")}
+                    className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
+                  >
+                    <ArrowDown className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleActive(item.id)}
+                    className={`grid h-8 w-8 place-items-center rounded-lg border transition ${
+                      item.is_active
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                        : "border-border bg-background text-muted-foreground"
+                    }`}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingItem({ ...item })}
+                    className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-foreground hover:border-sale hover:text-sale"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-background text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/40"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <form
+            onSubmit={handleAddItem}
+            className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="font-display text-base font-bold text-foreground">
+                {lang === "bn" ? "নতুন প্রশ্ন ও উত্তর যোগ করুন" : "Add New Question & Answer"}
+              </h3>
+              <button type="button" onClick={() => setShowAddModal(false)}>
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  {lang === "bn" ? "প্রশ্ন *" : "Question *"}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.target.value)}
+                  placeholder="e.g. How long does delivery take?"
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  {lang === "bn" ? "উত্তর *" : "Answer *"}
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={newAnswer}
+                  onChange={(e) => setNewAnswer(e.target.value)}
+                  placeholder="Provide a clear, helpful answer..."
+                  className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none transition focus:border-sale leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="tabNewActiveCheck"
+                  checked={newActive}
+                  onChange={(e) => setNewActive(e.target.checked)}
+                  className="h-4 w-4 rounded-sm border-border text-sale focus:ring-sale"
+                />
+                <label htmlFor="tabNewActiveCheck" className="text-xs font-medium text-foreground cursor-pointer">
+                  {lang === "bn" ? "হোমপেজে সক্রিয়ভাবে প্রদর্শন করুন" : "Display actively on storefront"}
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2 border-t border-border pt-4">
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="h-9 rounded-lg border border-border bg-card px-4 text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                {lang === "bn" ? "বাতিল" : "Cancel"}
+              </button>
+              <button
+                type="submit"
+                className="h-9 rounded-lg bg-sale px-4 text-xs font-bold text-white hover:bg-sale/90"
+              >
+                {lang === "bn" ? "প্রশ্ন যোগ করুন" : "Add Question"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <form
+            onSubmit={handleUpdateItem}
+            className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl"
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="font-display text-base font-bold text-foreground">
+                {lang === "bn" ? "প্রশ্ন ও উত্তর এডিট করুন" : "Edit Question & Answer"}
+              </h3>
+              <button type="button" onClick={() => setEditingItem(null)}>
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  {lang === "bn" ? "প্রশ্ন *" : "Question *"}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingItem.question}
+                  onChange={(e) => setEditingItem({ ...editingItem, question: e.target.value })}
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  {lang === "bn" ? "উত্তর *" : "Answer *"}
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={editingItem.answer}
+                  onChange={(e) => setEditingItem({ ...editingItem, answer: e.target.value })}
+                  className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none transition focus:border-sale leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="tabEditActiveCheck"
+                  checked={editingItem.is_active}
+                  onChange={(e) => setEditingItem({ ...editingItem, is_active: e.target.checked })}
+                  className="h-4 w-4 rounded-sm border-border text-sale focus:ring-sale"
+                />
+                <label htmlFor="tabEditActiveCheck" className="text-xs font-medium text-foreground cursor-pointer">
+                  {lang === "bn" ? "হোমপেজে সক্রিয়ভাবে প্রদর্শন করুন" : "Display actively on storefront"}
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2 border-t border-border pt-4">
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="h-9 rounded-lg border border-border bg-card px-4 text-xs font-semibold text-foreground hover:bg-secondary"
+              >
+                {lang === "bn" ? "বাতিল" : "Cancel"}
+              </button>
+              <button
+                type="submit"
+                className="h-9 rounded-lg bg-sale px-4 text-xs font-bold text-white hover:bg-sale/90"
+              >
+                {lang === "bn" ? "আপডেট করুন" : "Update FAQ"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ========================================================================= */
+/* TAB 8: SEO META QUICK EDITOR COMPONENT                                     */
+/* ========================================================================= */
+const COUNTRIES_LIST = [
+  { code: "bd", label: "Bangladesh (BD)", flag: "🇧🇩", prefix: "" },
+  { code: "us", label: "United States (US)", flag: "🇺🇸", prefix: "/us" },
+  { code: "uk", label: "United Kingdom (UK)", flag: "🇬🇧", prefix: "/uk" },
+  { code: "ca", label: "Canada (CA)", flag: "🇨🇦", prefix: "/ca" },
+  { code: "au", label: "Australia (AU)", flag: "🇦🇺", prefix: "/au" },
+];
+
+function SeoMetaQuickEditor({ lang }: { lang: Lang }) {
+  const router = useRouter();
+  const [selectedCountry, setSelectedCountry] = useState("bd");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [row, setRow] = useState<Partial<SeoMetaRow>>({
+    page_type: "home",
+    page_key: "home",
+    page_label: "Homepage",
+    country_code: "bd",
+    meta_title: "Faiza Zone — Fashion, Footwear & Accessories Online",
+    meta_description:
+      "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone. Authentic quality, flash sales up to 50% off with fast worldwide delivery.",
+    slug: "/",
+    canonical_url: "https://faizazone.com",
+  });
+
+  const loadCountryMeta = useCallback(async (code: string) => {
+    setLoading(true);
+    try {
+      const data = await fetchSeoMetaForPage("home", "home", code);
+      if (data) {
+        setRow(data);
+      } else {
+        const cObj = COUNTRIES_LIST.find((c) => c.code === code);
+        const subpath = cObj?.prefix || "";
+        setRow({
+          page_type: "home",
+          page_key: "home",
+          page_label: `Homepage (${code.toUpperCase()})`,
+          country_code: code,
+          meta_title: `Faiza Zone ${code.toUpperCase()} — Fashion, Footwear & Accessories`,
+          meta_description: `Shop trending fashion and accessories at Faiza Zone for ${code.toUpperCase()}. Fast delivery and authentic quality.`,
+          slug: subpath || "/",
+          canonical_url: `https://faizazone.com${subpath}`,
+        });
+      }
+    } catch {
+      toast.error("Failed to load SEO data for this country");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCountryMeta(selectedCountry);
+  }, [selectedCountry, loadCountryMeta]);
+
+  const handleCountryChange = (code: string) => {
+    setSelectedCountry(code);
+  };
+
+  const handleSaveSeo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await saveSeoMeta({
+        id: row.id,
+        page_type: "home",
+        page_key: "home",
+        page_label: row.page_label || `Homepage (${selectedCountry.toUpperCase()})`,
+        country_code: selectedCountry,
+        meta_title: row.meta_title ?? "",
+        meta_description: row.meta_description ?? "",
+        slug: row.slug ?? "/",
+        canonical_url: row.canonical_url ?? `https://faizazone.com${row.slug || ""}`,
+      });
+      toast.success(lang === "bn" ? "হোমপেজ এসইও মেটাডাটা সংরক্ষিত হয়েছে!" : "Homepage SEO metadata saved successfully!");
+      void loadCountryMeta(selectedCountry);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save SEO metadata");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const titleLen = (row.meta_title || "").length;
+  const descLen = (row.meta_description || "").length;
+
+  return (
+    <div className="space-y-6">
+      {/* Intro Card */}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-sale/10 p-1.5 text-sale">
+                <Search className="h-4 w-4" />
+              </span>
+              <h2 className="text-base font-bold text-foreground">
+                {lang === "bn" ? "হোমপেজ এসইও ও সার্চ ইঞ্জিন মেটাডাটা" : "Homepage SEO & Search Engine Metadata"}
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "গুগল, বিং ও সোশ্যাল মিডিয়াতে হোমপেজের যে মেটা টাইটেল ও মেটা ডেসক্রিপশন প্রদর্শিত হবে তা প্রতি দেশের জন্য আলাদাভাবে সেট করুন।"
+                : "Manage the Meta Title and Meta Description shown on Google, Bing & Social Media per country."}
+            </p>
+          </div>
+
+          <Link
+            to="/admin/seo-settings"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-secondary px-3.5 text-xs font-semibold text-foreground hover:bg-secondary/80"
+          >
+            <span>{lang === "bn" ? "সম্পূর্ণ এসইও ম্যানেজার খুলুন" : "Open Full SEO Manager"}</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        {/* Country Selector Tabs */}
+        <div className="mt-4">
+          <label className="block text-xs font-semibold text-muted-foreground mb-2">
+            {lang === "bn" ? "টার্গেট দেশ নির্বাচন করুন:" : "Select Target Country:"}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {COUNTRIES_LIST.map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => handleCountryChange(c.code)}
+                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+                  selectedCountry === c.code
+                    ? "bg-sale text-white shadow-xs"
+                    : "border border-border bg-background text-foreground hover:bg-secondary"
+                }`}
+              >
+                <span>{c.flag}</span>
+                <span>{c.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Editor & Preview Grid */}
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* Editor Form */}
+        <form
+          onSubmit={handleSaveSeo}
+          className="space-y-4 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs lg:col-span-7"
+        >
+          {loading ? (
+            <div className="flex min-h-[300px] items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-sale" />
+            </div>
+          ) : (
+            <>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-foreground">
+                    {lang === "bn" ? "মেটা টাইটেল (Meta Title) *" : "Meta Title *"}
+                  </label>
+                  <span
+                    className={`text-[11px] font-semibold ${
+                      titleLen > 60 ? "text-amber-500" : "text-muted-foreground"
+                    }`}
+                  >
+                    {titleLen} / 60 {lang === "bn" ? "অক্ষর (প্রস্তাবিত: ৫০-৬০)" : "chars (rec: 50-60)"}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={row.meta_title || ""}
+                  onChange={(e) => setRow({ ...row, meta_title: e.target.value })}
+                  placeholder="Faiza Zone — Fashion, Footwear & Accessories Online"
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-foreground">
+                    {lang === "bn" ? "মেটা ডেসক্রিপশন (Meta Description) *" : "Meta Description *"}
+                  </label>
+                  <span
+                    className={`text-[11px] font-semibold ${
+                      descLen > 160 ? "text-amber-500" : "text-muted-foreground"
+                    }`}
+                  >
+                    {descLen} / 160 {lang === "bn" ? "অক্ষর (প্রস্তাবিত: ১৫০-১৬০)" : "chars (rec: 150-160)"}
+                  </span>
+                </div>
+                <textarea
+                  required
+                  rows={4}
+                  value={row.meta_description || ""}
+                  onChange={(e) => setRow({ ...row, meta_description: e.target.value })}
+                  placeholder="Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone..."
+                  className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none transition focus:border-sale leading-relaxed"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-foreground mb-1.5">
+                    {lang === "bn" ? "ইউআরএল পাথ (Slug)" : "URL Path (Slug)"}
+                  </label>
+                  <input
+                    type="text"
+                    value={row.slug || ""}
+                    onChange={(e) => setRow({ ...row, slug: e.target.value })}
+                    placeholder="/ or /us"
+                    className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-foreground mb-1.5">
+                    {lang === "bn" ? "ক্যানোনিকাল URL" : "Canonical URL"}
+                  </label>
+                  <input
+                    type="url"
+                    value={row.canonical_url || ""}
+                    onChange={(e) => setRow({ ...row, canonical_url: e.target.value })}
+                    placeholder="https://faizazone.com"
+                    className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-border flex justify-end">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-sale px-5 text-xs font-bold text-white shadow-xs hover:bg-sale/90 disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  <span>{saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : (lang === "bn" ? "এসইও মেটা সেভ করুন" : "Save SEO Metadata")}</span>
+                </button>
+              </div>
+            </>
+          )}
+        </form>
+
+        {/* Live Google Search Preview Box */}
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs lg:col-span-5 space-y-4">
+          <div className="flex items-center gap-2 border-b border-border pb-3">
+            <Globe className="h-4 w-4 text-sale" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {lang === "bn" ? "গুগল সার্চ প্রিভিউ (SERP)" : "Google Search Result Preview"}
+            </h3>
+          </div>
+
+          <div className="rounded-xl border border-border/80 bg-background p-4 space-y-1.5 shadow-xs">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="grid h-4 w-4 place-items-center rounded-full bg-sale/10 text-[9px] font-bold text-sale">
+                FZ
+              </div>
+              <span className="truncate text-[11px] font-medium text-foreground">Faiza Zone</span>
+              <span className="text-[10px] text-muted-foreground">
+                https://faizazone.com{row.slug === "/" ? "" : row.slug || ""}
+              </span>
+            </div>
+
+            <h4 className="text-base font-medium text-blue-600 hover:underline cursor-pointer line-clamp-1 leading-snug">
+              {row.meta_title || "Faiza Zone — Fashion, Footwear & Accessories Online"}
+            </h4>
+
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+              {row.meta_description || "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone with fast worldwide delivery."}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-secondary/50 p-3.5 text-[11px] text-muted-foreground space-y-1.5 leading-relaxed">
+            <p className="font-semibold text-foreground">
+              {lang === "bn" ? "💡 বিশেষজ্ঞ এসইও পরামর্শ:" : "💡 Expert SEO Tip:"}
+            </p>
+            <p>
+              {lang === "bn"
+                ? "মেটা টাইটেলে ব্র্যান্ড নাম 'Faiza Zone' এবং প্রধান প্রোডাক্ট ক্যাটাগরি (Kurti, Panjabi, Fashion) উল্লেখ করুন। মেটা ডেসক্রিপশনে আকর্ষণীয় অফার যেমন 'Free Shipping' বা 'Up to 50% Off' যোগ করলে ক্লিক থ্রু রেট (CTR) বহুগুণ বৃদ্ধি পায়।"
+                : "Include your brand name and top keywords (Fashion, Kurti, Panjabi) in the Title. Add compelling offers like 'Fast Delivery' or 'Up to 50% Off' in the Description to maximize your Click-Through Rate (CTR)."}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

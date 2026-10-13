@@ -89,7 +89,7 @@ export default function AdminMegaMenuPage() {
         setActiveTabId(initialItems[0].id);
       }
     }
-  }, [initialItems]);
+  }, [initialItems, activeTabId]);
 
   const activeTab = useMemo(() => {
     return menuItems.find((m) => m.id === activeTabId) || menuItems[0] || null;

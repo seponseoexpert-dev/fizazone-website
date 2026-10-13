@@ -219,7 +219,9 @@ function LocationSheet({
 }
 
 
-export function Header() {
+import type { SiteBranding } from "@/lib/site-branding-server";
+
+export function Header({ initialBranding }: { initialBranding?: SiteBranding } = {}) {
   const [searchOpen, setSearchOpen] = useState(false);
   const { dark, toggleDark } = useTheme();
   const [openTab, setOpenTab] = useState<string | null>(null);
@@ -233,7 +235,7 @@ export function Header() {
   const { country, setCountry } = useCountry();
   const { count } = useCart();
   const activeCountries = useActiveCountries();
-  const { data: branding } = useSiteBranding();
+  const { data: branding } = useSiteBranding(initialBranding);
 
   // If the stored country was disabled in the admin panel, fall back to an
   // active market so the header never advertises a closed storefront.

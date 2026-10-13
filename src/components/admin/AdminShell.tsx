@@ -8,7 +8,9 @@ import {
   Boxes,
   ChevronDown,
   ClipboardList,
+  FileText,
   Globe,
+  HelpCircle,
   Image as ImageIcon,
   Layers,
   LayoutDashboard,
@@ -18,6 +20,7 @@ import {
   Menu,
   Package,
   RotateCcw,
+  Search,
   Settings,
   Star,
   Store,
@@ -75,6 +78,7 @@ const NAV: NavGroup[] = [
     items: [
       { label: "Homepage Banners", icon: ImageIcon, to: "/admin/banners" },
       { label: "Homepage Sections", icon: LayoutDashboard, to: "/admin/homepage" },
+      { label: "Homepage FAQs", icon: HelpCircle, to: "/admin/faq" },
       { label: "Mega Menu", icon: Menu, to: "/admin/mega-menu" },
     ],
   },
@@ -87,6 +91,14 @@ const NAV: NavGroup[] = [
     ],
   },
   {
+    label: "SEO & Growth",
+    items: [
+      { label: "SEO Settings", icon: Search, to: "/admin/seo-settings" },
+      { label: "Sitemap & Robots", icon: FileText, to: "/admin/sitemap-robots" },
+      { label: "Hreflang & Geotargeting", icon: Globe, to: "/admin/hreflang" },
+    ],
+  },
+  {
     label: "Users & Roles",
     items: [{ label: "Admin Users", icon: UserCog, to: "/admin/users" }],
   },
@@ -94,7 +106,6 @@ const NAV: NavGroup[] = [
     label: "Setup",
     items: [{ label: "Settings", icon: Settings, to: "/admin/settings" }],
   },
-
 ];
 
 
