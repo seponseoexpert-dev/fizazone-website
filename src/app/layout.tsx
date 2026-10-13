@@ -1,26 +1,139 @@
 import type { Metadata } from "next";
+import { Inter, Poppins } from "next/font/google";
 import "@/styles.css";
 import { Providers } from "@/components/providers";
 
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const poppins = Poppins({
+  weight: ["600", "700", "800"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-poppins",
+});
+
 export const metadata: Metadata = {
-  title: "Faiza Zone",
-  description: "Online fashion store for Bangladesh, USA and UK.",
-  authors: [{ name: "Faiza Zone" }],
+  metadataBase: new URL("https://faizazone.com"),
+  title: {
+    default: "Faiza Zone — Fashion, Footwear & Accessories Online",
+    template: "%s | Faiza Zone",
+  },
+  description:
+    "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone. Authentic quality, flash sales up to 50% off with fast worldwide delivery.",
+  keywords: [
+    "Faiza Zone",
+    "FaizaZone",
+    "online shopping BD",
+    "fashion store bangladesh",
+    "kurti collection",
+    "panjabi",
+    "hoodie",
+    "sneakers",
+    "ethnic wear",
+    "mens fashion",
+    "womens fashion",
+  ],
+  authors: [{ name: "Faiza Zone", url: "https://faizazone.com" }],
+  creator: "Faiza Zone",
+  publisher: "Faiza Zone",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
-    title: "Faiza Zone",
-    description: "Online fashion store for Bangladesh, USA and UK.",
     type: "website",
+    locale: "en_US",
+    url: "https://faizazone.com",
     siteName: "Faiza Zone",
+    title: "Faiza Zone — Fashion, Footwear & Accessories Online",
+    description:
+      "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone with fast worldwide delivery.",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Faiza Zone Online Fashion Store",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
+    title: "Faiza Zone — Fashion, Footwear & Accessories Online",
+    description:
+      "Shop trending kurti, panjabi, hoodies, sneakers and accessories at Faiza Zone.",
     site: "@faizazone",
+    creator: "@faizazone",
+    images: ["/og-image.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   icons: {
-    icon: "/api/favicon",
-    shortcut: "/api/favicon",
-    apple: "/api/favicon",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
+};
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://faizazone.com/#organization",
+      name: "Faiza Zone",
+      url: "https://faizazone.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://faizazone.com/og-image.jpg",
+        width: 1200,
+        height: 630,
+      },
+      sameAs: [
+        "https://www.facebook.com/faizazone",
+        "https://www.instagram.com/faizazone",
+      ],
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          telephone: "+8801700000000",
+          contactType: "customer service",
+          areaServed: ["BD", "US", "GB", "CA", "AU"],
+          availableLanguage: ["English", "Bengali"],
+        },
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://faizazone.com/#website",
+      url: "https://faizazone.com",
+      name: "Faiza Zone",
+      description: "Online fashion and lifestyle store for Bangladesh, USA, UK, Canada & Australia.",
+      publisher: { "@id": "https://faizazone.com/#organization" },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: "https://faizazone.com/categories?q={search_term_string}",
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -29,7 +142,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -45,11 +158,9 @@ export default function RootLayout({
             `,
           }}
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap"
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased text-foreground">

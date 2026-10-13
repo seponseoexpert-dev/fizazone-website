@@ -25,11 +25,23 @@ export const SEO_BASE_URL = "https://faizazone.com";
 export const SEO_COUNTRY_PATHS: Record<string, string> = {
   bd: "/bd",
   uk: "/uk",
-  us: "/usa",
-  usa: "/usa",
+  us: "/us",
+  usa: "/us",
   ca: "/ca",
   au: "/au",
 };
+
+export function buildMarketHreflang(subpath = ""): Record<string, string> {
+  const clean = subpath ? (subpath.startsWith("/") ? subpath : `/${subpath}`) : "";
+  return {
+    "bn-BD": `${SEO_BASE_URL}/bd${clean}`,
+    "en-US": `${SEO_BASE_URL}/us${clean}`,
+    "en-GB": `${SEO_BASE_URL}/uk${clean}`,
+    "en-CA": `${SEO_BASE_URL}/ca${clean}`,
+    "en-AU": `${SEO_BASE_URL}/au${clean}`,
+    "x-default": `${SEO_BASE_URL}/bd${clean}`,
+  };
+}
 
 function parseHreflang(value: unknown): HreflangAlt[] {
   if (!Array.isArray(value)) return [];
@@ -92,4 +104,21 @@ export async function fetchSeoConfig(key: string): Promise<string> {
 export async function saveSeoConfig(key: string, value: string) {
   const { error } = await supabase.from("seo_config").upsert({ key, value }, { onConflict: "key" });
   if (error) throw error;
+}
+
+export async function fetchSeoMetaForPage(
+  pageType: SeoPageType,
+  pageKey?: string,
+  countryCode?: string,
+): Promise<SeoMetaRow | null> {
+  try {
+    let query = supabase.from("seo_meta").select("*").eq("page_type", pageType);
+    if (pageKey) query = query.eq("page_key", pageKey);
+    if (countryCode) query = query.eq("country_code", countryCode.toLowerCase());
+    const { data } = await query.maybeSingle();
+    if (!data) return null;
+    return { ...data, hreflang: parseHreflang(data.hreflang) } as SeoMetaRow;
+  } catch {
+    return null;
+  }
 }

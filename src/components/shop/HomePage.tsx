@@ -12,6 +12,7 @@ import {
 } from "@/components/shop/Sections";
 import { BottomNav } from "@/components/shop/BottomNav";
 import { DynamicProductSection } from "@/components/shop/DynamicProductSection";
+import { HomeSeoArticle } from "@/components/shop/HomeSeoArticle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useHomepageConfig } from "@/lib/homepage-config";
@@ -132,6 +133,9 @@ export function HomePage() {
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
       <Header />
       <main>
+        <h1 className="sr-only">
+          Faiza Zone — Premium Fashion, Traditional Wear, Footwear & Accessories Online Store
+        </h1>
         {/* 1. Hero Slides */}
         <Hero />
 
@@ -212,6 +216,9 @@ export function HomePage() {
 
         {/* 10. Service Features */}
         {config?.features_enabled !== false && <Features />}
+
+        {/* 11. High-Ranking SEO Editorial & Shopping Guide */}
+        <HomeSeoArticle />
       </main>
       <Footer />
       <BottomNav />

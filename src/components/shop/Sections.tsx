@@ -142,6 +142,8 @@ export function Hero() {
                 width={1600}
                 height={704}
                 loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "low"}
+                decoding={i === 0 ? "sync" : "async"}
                 className={`h-full w-full object-cover ${i === index ? "hero-zoom" : ""}`}
               />
               {/* Centered text overlay */}

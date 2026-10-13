@@ -59,19 +59,29 @@ export function middleware(req: NextRequest) {
   const segments = pathname.split("/").filter(Boolean);
   const first = segments[0]?.toLowerCase() || "";
 
-  // 3. Handle legacy aliases (e.g. /usa -> /us, /gb -> /uk)
+  // 3. Handle legacy aliases (e.g. /usa -> /us, /gb -> /uk) with 301 Permanent Redirect
   if (first && PREFIX_ALIASES[first]) {
     const canonical = PREFIX_ALIASES[first];
     const rest = segments.slice(1).join("/");
     const targetPath = `/${canonical}${rest ? `/${rest}` : ""}`;
     const redirectUrl = new URL(targetPath + search, req.url);
-    const response = NextResponse.redirect(redirectUrl, 307);
+    const response = NextResponse.redirect(redirectUrl, 301);
     response.cookies.set("fiza_country", canonical, {
       path: "/",
       maxAge: 60 * 60 * 24 * 365,
       sameSite: "lax",
     });
     return response;
+  }
+
+  // Allow major search engine crawlers to crawl root page directly without forced geo-redirect
+  const userAgent = (req.headers.get("user-agent") || "").toLowerCase();
+  const isBot =
+    /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|twitterbot|facebookexternalhit|rogerbot|linkedinbot|pinterestbot/i.test(
+      userAgent,
+    );
+  if (isBot && (!first || pathname === "/")) {
+    return NextResponse.next();
   }
 
   // 4. If URL already starts with a supported market prefix (e.g. /bd, /us, /uk)

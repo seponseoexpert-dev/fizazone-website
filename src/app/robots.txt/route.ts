@@ -1,7 +1,32 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-const FALLBACK = "User-agent: *\nAllow: /\n\nSitemap: https://faizazone.com/sitemap.xml\n";
+const FALLBACK = `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /cart
+Disallow: /cart/
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /account
+Disallow: /account/
+Disallow: /payment/
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account
+
+Sitemap: https://faizazone.com/sitemap.xml
+`;
 
 export async function GET() {
   let body = FALLBACK;
@@ -28,10 +53,10 @@ export async function GET() {
     /* fall back to the static rules */
   }
 
-  return new Response(body, {
+  return new Response(body.trim() + "\n", {
     headers: {
-      "Content-Type": "text/plain",
-      "Cache-Control": "public, max-age=600",
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "public, max-age=3600, s-maxage=86400",
     },
   });
 }
