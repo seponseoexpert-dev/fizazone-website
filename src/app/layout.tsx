@@ -83,9 +83,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: "/api/favicon",
+    shortcut: "/api/favicon",
+    apple: "/api/favicon",
   },
 };
 
@@ -136,14 +136,21 @@ const organizationSchema = {
   ],
 };
 
-export default function RootLayout({
+import { fetchServerSiteBranding } from "@/lib/site-branding-server";
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const branding = await fetchServerSiteBranding();
+
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
       <head>
+        <link rel="icon" href={branding.favicon_url || "/api/favicon"} />
+        <link rel="shortcut icon" href={branding.favicon_url || "/api/favicon"} />
+        <link rel="apple-touch-icon" href={branding.favicon_url || "/api/favicon"} />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -164,7 +171,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased text-foreground">
-        <Providers>{children}</Providers>
+        <Providers initialBranding={branding}>{children}</Providers>
       </body>
     </html>
   );

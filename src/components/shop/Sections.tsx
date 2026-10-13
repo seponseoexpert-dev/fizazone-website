@@ -85,11 +85,13 @@ const fallbackSlides: HeroSlide[] = slides.map((s) => ({
   href: `${s.link}?category=${encodeURIComponent(s.search.category)}`,
 }));
 
-export function Hero() {
+import type { Banner } from "@/lib/content";
+
+export function Hero({ initialBanners }: { initialBanners?: Banner[] } = {}) {
   const { data: homeConfig } = useHomepageConfig();
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
-  const { data: banners } = useSiteBanners();
+  const { data: banners } = useSiteBanners(initialBanners);
 
   const heroSlides: HeroSlide[] =
     banners && banners.length

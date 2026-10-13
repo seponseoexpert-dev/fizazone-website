@@ -16,14 +16,41 @@ import { HomeSeoArticle } from "@/components/shop/HomeSeoArticle";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useHomepageConfig } from "@/lib/homepage-config";
+import type { HomepageConfig } from "@/lib/homepage-config";
+import type { Banner } from "@/lib/content";
+import type { ShopProduct } from "@/lib/catalog";
 import { trendy, ethnic, popular, flashSale, allProducts, type Product } from "./data";
 
-export function HomePage() {
-  const { data: config } = useHomepageConfig();
+export function HomePage({
+  initialConfig,
+  initialBanners,
+  initialProducts,
+}: {
+  initialConfig?: HomepageConfig;
+  initialBanners?: Banner[];
+  initialProducts?: ShopProduct[];
+} = {}) {
+  const { data: config } = useHomepageConfig(initialConfig);
+
+  const mappedInitial = useMemo(() => {
+    if (!initialProducts || initialProducts.length === 0) return undefined;
+    return initialProducts.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      image: p.image || p.images?.[0] || allProducts[0]?.image || "",
+      price: p.price,
+      oldPrice: p.oldPrice,
+      rating: p.rating ?? 5,
+      category: p.category,
+      flash: Boolean(p.flash),
+    }));
+  }, [initialProducts]);
 
   // Load real products from Supabase database so selected products from Admin Studio match immediately
   const { data: dbProducts } = useQuery({
     queryKey: ["homepage-db-products"],
+    initialData: mappedInitial,
     queryFn: async () => {
       try {
         const { data, error } = await supabase
@@ -47,7 +74,7 @@ export function HomePage() {
         return [];
       }
     },
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
   // Unified available product list combining DB products and fallbacks
@@ -137,7 +164,7 @@ export function HomePage() {
           Faiza Zone — Premium Fashion, Traditional Wear, Footwear & Accessories Online Store
         </h1>
         {/* 1. Hero Slides */}
-        <Hero />
+        <Hero initialBanners={initialBanners} />
 
         {/* 2. Shop by Categories */}
         <Categories />

@@ -14,25 +14,33 @@ const matchesCountry = (rowCountry: string, code: string) => {
   return c === "all" || c === code;
 };
 
+export async function fetchSiteBanners(countryCode = "bd"): Promise<Banner[]> {
+  const code = countryCode === "usa" ? "us" : countryCode.toLowerCase();
+  try {
+    const { data, error } = await supabase
+      .from("banners")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+    if (error) return [];
+    return ((data ?? []) as Banner[]).filter(
+      (b) => b.image_url && matchesCountry(b.country_code, code),
+    );
+  } catch {
+    return [];
+  }
+}
+
 /** Active homepage banners for the visitor's market. */
-export function useSiteBanners() {
+export function useSiteBanners(initialData?: Banner[]) {
   const { country } = useCountry();
   const code = dbCountryCode(country.code);
 
   return useQuery({
     queryKey: ["site-banners", code],
     staleTime: 60_000,
-    queryFn: async (): Promise<Banner[]> => {
-      const { data, error } = await supabase
-        .from("banners")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return ((data ?? []) as Banner[]).filter(
-        (b) => b.image_url && matchesCountry(b.country_code, code),
-      );
-    },
+    initialData,
+    queryFn: () => fetchSiteBanners(code),
   });
 }
 

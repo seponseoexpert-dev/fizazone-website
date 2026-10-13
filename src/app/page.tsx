@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { HomePage } from "@/components/shop/HomePage";
 import { getMarkets } from "@/lib/markets.functions";
 import { fetchSeoMetaForPage, buildMarketHreflang } from "@/lib/seo";
+import { fetchServerHomepageConfig } from "@/lib/homepage-config-server";
+import { fetchSiteBanners } from "@/lib/site-content";
+import { fetchShopProducts } from "@/lib/catalog";
 
 export const revalidate = 60;
 
@@ -66,6 +69,18 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function RootPage() {
-  return <HomePage />;
+export default async function RootPage() {
+  const [initialConfig, initialBanners, initialProducts] = await Promise.all([
+    fetchServerHomepageConfig(),
+    fetchSiteBanners("bd"),
+    fetchShopProducts("bd"),
+  ]);
+
+  return (
+    <HomePage
+      initialConfig={initialConfig}
+      initialBanners={initialBanners}
+      initialProducts={initialProducts}
+    />
+  );
 }

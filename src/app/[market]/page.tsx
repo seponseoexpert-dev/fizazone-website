@@ -3,6 +3,9 @@ import { HomePage } from "@/components/shop/HomePage";
 import { getMarkets } from "@/lib/markets.functions";
 import { resolveMarket } from "@/lib/markets";
 import { fetchSeoMetaForPage, buildMarketHreflang } from "@/lib/seo";
+import { fetchServerHomepageConfig } from "@/lib/homepage-config-server";
+import { fetchSiteBanners } from "@/lib/site-content";
+import { fetchShopProducts } from "@/lib/catalog";
 
 export const revalidate = 60;
 
@@ -76,6 +79,24 @@ export async function generateMetadata({
   }
 }
 
-export default function MarketHomePage() {
-  return <HomePage />;
+export default async function MarketHomePage({
+  params,
+}: {
+  params: Promise<{ market: string }>;
+}) {
+  const { market: marketParam } = await params;
+
+  const [initialConfig, initialBanners, initialProducts] = await Promise.all([
+    fetchServerHomepageConfig(),
+    fetchSiteBanners(marketParam),
+    fetchShopProducts(marketParam),
+  ]);
+
+  return (
+    <HomePage
+      initialConfig={initialConfig}
+      initialBanners={initialBanners}
+      initialProducts={initialProducts}
+    />
+  );
 }
