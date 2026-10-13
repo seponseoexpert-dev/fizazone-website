@@ -249,7 +249,7 @@ export function HomePage({
         {config?.features_enabled !== false && <Features />}
 
         {/* 11. High-Ranking SEO Editorial & Shopping Guide */}
-        <HomeSeoArticle />
+        <HomeSeoArticle config={config?.seo_article} />
 
         {/* 12. Frequently Asked Questions (FAQ) Section */}
         <HomeFaqSection faqConfig={config?.faq} />

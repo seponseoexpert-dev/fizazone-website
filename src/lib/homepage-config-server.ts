@@ -85,6 +85,23 @@ export type FaqSectionConfig = {
   items: FaqItem[];
 };
 
+export type SeoArticleSectionConfig = {
+  enabled: boolean;
+  badge_label?: string;
+  badge_trust?: string;
+  title: string;
+  preview_text: string;
+  section_1_title?: string;
+  section_1_body?: string;
+  section_2_title?: string;
+  section_2_body?: string;
+  section_3_title?: string;
+  section_3_body?: string;
+  custom_content?: string;
+  read_more_label?: string;
+  show_less_label?: string;
+};
+
 export type HomepageConfig = {
   hero_enabled: boolean;
   categories: CategoriesSectionConfig;
@@ -97,6 +114,7 @@ export type HomepageConfig = {
   extra_sections: ProductSectionConfig[];
   features_enabled: boolean;
   faq?: FaqSectionConfig;
+  seo_article?: SeoArticleSectionConfig;
 };
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
@@ -260,6 +278,21 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
       },
     ],
   },
+  seo_article: {
+    enabled: true,
+    badge_label: "Online Fashion Guide",
+    badge_trust: "Trusted by Shopping Warehouses",
+    title: "Faiza Zone — The Premier Online Fashion & Lifestyle Shopping Destination in Bangladesh",
+    preview_text: "Looking for authentic, trendsetting clothing with guaranteed fabric quality and affordable pricing? Faiza Zone is Bangladesh's leading e-commerce platform offering an exquisite fusion of traditional South Asian ethnic fashion and contemporary global streetwear.",
+    section_1_title: "Curated Ethnic Wear: Elegant Kurtis, Panjabis & Festive Attire",
+    section_1_body: "Whether dressing up for festive celebrations, weddings, or everyday corporate elegance, our handcrafted designer kurti collection features breathable cotton, georgette, and intricate embroidery. For gentlemen, explore our signature mens panjabi range, tailor-fitted from premium jacquard, linen, and pure combed cotton to deliver unmatched comfort and royal poise.",
+    section_2_title: "Modern Everyday Styles: Hoodies, Tees, Denim & Footwear",
+    section_2_body: "From cozy fleece-lined winter hoodies and athletic joggers to heavyweight mens streetwear and chic womens western apparel, each garment complies with internationally recognized textile quality and skin-friendly standards. Match your outfit with durable gabardine trousers and versatile backpacks designed for active urban living.",
+    section_3_title: "Transparent Shopping, Express Nationwide Delivery & Global Dispatch",
+    section_3_body: "Enjoy seamless shopping with door-to-door Cash on Delivery (COD) across Dhaka, Chattogram, Sylhet, and every district in Bangladesh, alongside fast DHL/FedEx worldwide delivery to the USA, UK, Canada, and Australia. Every transaction is guarded with bank-grade encryption certified under PCI-DSS security benchmarks.",
+    read_more_label: "Read More",
+    show_less_label: "Show Less",
+  },
 };
 
 export async function fetchServerHomepageConfig(): Promise<HomepageConfig> {
@@ -288,6 +321,17 @@ export async function fetchServerHomepageConfig(): Promise<HomepageConfig> {
           items: Array.isArray(val.faq?.items) && val.faq.items.length > 0
             ? val.faq.items
             : DEFAULT_HOMEPAGE_CONFIG.faq!.items,
+        },
+        seo_article: {
+          ...DEFAULT_HOMEPAGE_CONFIG.seo_article!,
+          ...(val.seo_article || {}),
+          // Ensure no hardcoded number like "120,000+" or "2000+" remains in badge_trust
+          badge_trust:
+            val.seo_article?.badge_trust &&
+            !val.seo_article.badge_trust.includes("120,000") &&
+            !val.seo_article.badge_trust.includes("2000+")
+              ? val.seo_article.badge_trust
+              : "Trusted by Shopping Warehouses",
         },
       };
     }

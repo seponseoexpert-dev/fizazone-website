@@ -13,9 +13,11 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Code2,
   ExternalLink,
   Eye,
+  FileText,
   Flame,
   Globe,
   Grid,
@@ -54,6 +56,7 @@ import {
   type ProductSectionLayout,
   type FaqItem,
   type FaqSectionConfig,
+  type SeoArticleSectionConfig,
 } from "@/lib/homepage-config";
 import { fetchSeoMetaForPage, saveSeoMeta, type SeoMetaRow } from "@/lib/seo";
 import { allProducts, categories as defaultCategories, type Product } from "@/components/shop/data";
@@ -91,6 +94,7 @@ const DICT = {
       popular: "Most Popular Products",
       extra_sections: "Custom Sections",
       faq: "Homepage FAQs",
+      article: "SEO Shopping Article",
       seo: "SEO Meta",
     },
     status: {
@@ -210,6 +214,7 @@ const DICT = {
       popular: "জনপ্রিয় প্রোডাক্ট",
       extra_sections: "কাস্টম সেকশন",
       faq: "FAQ (প্রশ্নোত্তর)",
+      article: "এসইও আর্টিকেল ও গাইড",
       seo: "SEO মেটাডাটা",
     },
     status: {
@@ -334,6 +339,7 @@ type ActiveTab =
   | "popular"
   | "extra_sections"
   | "faq"
+  | "article"
   | "seo";
 
 function AdminHomepageStudioPageContent() {
@@ -356,6 +362,7 @@ function AdminHomepageStudioPageContent() {
     const tabParam = searchParams?.get("tab");
     if (
       tabParam === "faq" ||
+      tabParam === "article" ||
       tabParam === "seo" ||
       tabParam === "categories" ||
       tabParam === "promo_strip" ||
@@ -684,6 +691,14 @@ function AdminHomepageStudioPageContent() {
               label={t.tabs.faq}
               badge={config.faq?.enabled !== false ? `${config.faq?.items?.filter((i) => i.is_active).length ?? 0}` : t.status.off}
               badgeTone={config.faq?.enabled !== false ? "blue" : "gray"}
+            />
+            <TabButton
+              active={activeTab === "article"}
+              onClick={() => setActiveTab("article")}
+              icon={<FileText className="h-4 w-4" />}
+              label={t.tabs.article}
+              badge={config.seo_article?.enabled !== false ? t.status.active : t.status.off}
+              badgeTone={config.seo_article?.enabled !== false ? "green" : "gray"}
             />
             <TabButton
               active={activeTab === "seo"}
@@ -1598,7 +1613,18 @@ function AdminHomepageStudioPageContent() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 8: SEO META MANAGEMENT                                                 */}
+        {/* TAB 8: SEO SHOPPING ARTICLE & WAREHOUSE TRUST BADGE                        */}
+        {/* ========================================================================= */}
+        {activeTab === "article" && (
+          <SeoArticleTabEditor
+            lang={lang}
+            article={config.seo_article || DEFAULT_HOMEPAGE_CONFIG.seo_article!}
+            onUpdate={(updatedArticle) => setConfig((prev) => ({ ...prev, seo_article: updatedArticle }))}
+          />
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 9: SEO META MANAGEMENT                                                 */}
         {/* ========================================================================= */}
         {activeTab === "seo" && <SeoMetaQuickEditor lang={lang} />}
       </div>
@@ -2902,6 +2928,423 @@ function SeoMetaQuickEditor({ lang }: { lang: Lang }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ========================================================================= */
+/* TAB 8: SEO ARTICLE & SHOPPING GUIDE EDITOR COMPONENT                      */
+/* ========================================================================= */
+function SeoArticleTabEditor({
+  lang,
+  article,
+  onUpdate,
+}: {
+  lang: Lang;
+  article: SeoArticleSectionConfig;
+  onUpdate: (updated: SeoArticleSectionConfig) => void;
+}) {
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const [activeTabSub, setActiveTabSub] = useState<"sections" | "custom">("sections");
+
+  const badgeTrustDisplay =
+    article.badge_trust &&
+    !article.badge_trust.includes("120,000") &&
+    !article.badge_trust.includes("2000+")
+      ? article.badge_trust
+      : "Trusted by Shopping Warehouses";
+
+  const handleResetToDefault = () => {
+    if (
+      window.confirm(
+        lang === "bn"
+          ? "আপনি কি এসইও আর্টিকেলের তথ্য ডিফল্ট অবস্থায় ফিরিয়ে নিতে চান?"
+          : "Reset SEO Article settings to default?",
+      )
+    ) {
+      onUpdate({ ...DEFAULT_HOMEPAGE_CONFIG.seo_article! });
+      toast.info(
+        lang === "bn"
+          ? "এসইও আর্টিকেল ডিফল্ট করা হয়েছে। 'Save All Changes' চাপুন।"
+          : "SEO Article reset to default. Click 'Save All Changes' above.",
+      );
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Settings Card */}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs space-y-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-sale/10 p-1.5 text-sale">
+                <FileText className="h-4 w-4" />
+              </span>
+              <h2 className="text-base font-bold text-foreground">
+                {lang === "bn" ? "এসইও শপিং আর্টিকেল ও ট্রাস্ট ব্যাজ কাস্টমাইজেশন" : "SEO Shopping Article & Warehouse Trust Badge"}
+              </h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "হোমপেজের একদম নিচে প্রদর্শিত এসইও আর্টিকেল, ট্রাস্ট ব্যাজ (সংখ্যা ছাড়া), টাইটেল ও বিস্তারিত কনটেন্ট কাস্টমাইজ করুন।"
+                : "Customize the bottom SEO article, trust badge text without numbers, heading, and expandable shopping editorial."}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleResetToDefault}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-secondary/50 px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>{lang === "bn" ? "ডিফল্ট করুন" : "Reset Default"}</span>
+            </button>
+
+            <label className="relative inline-flex cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={article.enabled !== false}
+                onChange={(e) => onUpdate({ ...article, enabled: e.target.checked })}
+                className="peer sr-only"
+              />
+              <span className="text-xs sm:text-sm font-semibold text-foreground">
+                {article.enabled !== false
+                  ? lang === "bn"
+                    ? "সেকশন চালু"
+                    : "Section Enabled"
+                  : lang === "bn"
+                    ? "সেকশন বন্ধ"
+                    : "Section Disabled"}
+              </span>
+              <div className="h-6 w-11 rounded-full bg-muted transition peer-checked:bg-sale peer-focus:outline-none after:absolute after:right-[23px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></div>
+            </label>
+          </div>
+        </div>
+
+        {article.enabled !== false && (
+          <div className="space-y-6 pt-1">
+            {/* Row 1: Badges & Trust Text */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  {lang === "bn" ? "১. আইব্রো ব্যাজ ট্যাগ" : "1. Eyebrow Badge Tag"}
+                </label>
+                <input
+                  type="text"
+                  value={article.badge_label || ""}
+                  onChange={(e) => onUpdate({ ...article, badge_label: e.target.value })}
+                  placeholder="Online Fashion Guide"
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {lang === "bn" ? "ছোট গোলাপি ব্যাজ (যেমন: Online Fashion Guide)" : "Small badge (e.g. Online Fashion Guide)"}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  {lang === "bn" ? "২. ট্রাস্ট ব্যাজ টেক্সট (সংখ্যা প্রয়োজন নেই)" : "2. Trust Badge Text (No Numbers)"}
+                </label>
+                <input
+                  type="text"
+                  value={badgeTrustDisplay}
+                  onChange={(e) => onUpdate({ ...article, badge_trust: e.target.value })}
+                  placeholder="Trusted by Shopping Warehouses"
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+                />
+                <p className="mt-1 text-[11px] text-emerald-600 font-medium">
+                  {lang === "bn"
+                    ? "✓ কোনো সংখ্যা প্রয়োজন নেই। যেমন: 'Trusted by Shopping Warehouses'।"
+                    : "✓ No count number needed. E.g. 'Trusted by Shopping Warehouses'."}
+                </p>
+              </div>
+            </div>
+
+            {/* Row 2: Main Heading */}
+            <div>
+              <label className="block text-xs font-bold text-foreground mb-1.5">
+                {lang === "bn" ? "৩. মূল এসইও আর্টিকেল শিরোনাম (H2 Heading)" : "3. Main SEO Article Heading (H2)"}
+              </label>
+              <input
+                type="text"
+                value={article.title || ""}
+                onChange={(e) => onUpdate({ ...article, title: e.target.value })}
+                placeholder="Faiza Zone — The Premier Online Fashion & Lifestyle Shopping Destination in Bangladesh"
+                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale font-medium"
+              />
+            </div>
+
+            {/* Row 3: Preview Intro Paragraph */}
+            <div>
+              <label className="block text-xs font-bold text-foreground mb-1.5">
+                {lang === "bn" ? "৪. সারসংক্ষেপ প্রিভিউ টেক্সট (Read More বাটনের পূর্বে সর্বদা দৃশ্যমান)" : "4. Summary Preview Text (Always visible before 'Read More')"}
+              </label>
+              <textarea
+                rows={3}
+                value={article.preview_text || ""}
+                onChange={(e) => onUpdate({ ...article, preview_text: e.target.value })}
+                placeholder="Looking for authentic, trendsetting clothing with guaranteed fabric quality and affordable pricing?..."
+                className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none transition focus:border-sale leading-relaxed"
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {lang === "bn"
+                  ? "এই টেক্সটটি মোবাইল ও কম্পিউটারে ভিজিট করার সাথে সাথে দেখা যাবে।"
+                  : "This intro paragraph is immediately visible to visitors and search engine crawlers."}
+              </p>
+            </div>
+
+            {/* Row 4: Button Labels */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  {lang === "bn" ? "৫. 'Read More' বাটন টেক্সট" : "5. 'Read More' Button Label"}
+                </label>
+                <input
+                  type="text"
+                  value={article.read_more_label || "Read More"}
+                  onChange={(e) => onUpdate({ ...article, read_more_label: e.target.value })}
+                  placeholder="Read More"
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-1.5">
+                  {lang === "bn" ? "৬. 'Show Less' বাটন টেক্সট" : "6. 'Show Less' Button Label"}
+                </label>
+                <input
+                  type="text"
+                  value={article.show_less_label || "Show Less"}
+                  onChange={(e) => onUpdate({ ...article, show_less_label: e.target.value })}
+                  placeholder="Show Less"
+                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none transition focus:border-sale"
+                />
+              </div>
+            </div>
+
+            {/* Extended Content Customization Tabs */}
+            <div className="rounded-xl border border-border bg-background/50 p-4 space-y-4">
+              <div className="flex items-center justify-between border-b border-border/70 pb-3">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTabSub("sections")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      activeTabSub === "sections"
+                        ? "bg-sale text-white"
+                        : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {lang === "bn" ? "৩টি কাঠামোগত সেকশন" : "3 Structured Editorial Sections"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTabSub("custom")}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                      activeTabSub === "custom"
+                        ? "bg-sale text-white"
+                        : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {lang === "bn" ? "সম্পূর্ণ নিজস্ব কাস্টম টেক্সট" : "Custom Plain/HTML Content"}
+                  </button>
+                </div>
+              </div>
+
+              {activeTabSub === "sections" && (
+                <div className="space-y-4 pt-1">
+                  {/* Section 1 */}
+                  <div className="rounded-lg border border-border/70 bg-card p-3.5 space-y-2">
+                    <label className="block text-xs font-bold text-foreground">
+                      {lang === "bn" ? "সেকশন ১ শিরোনাম ও টেক্সট" : "Section 1: Title & Content"}
+                    </label>
+                    <input
+                      type="text"
+                      value={article.section_1_title || ""}
+                      onChange={(e) => onUpdate({ ...article, section_1_title: e.target.value })}
+                      placeholder="Curated Ethnic Wear: Elegant Kurtis, Panjabis & Festive Attire"
+                      className="h-9 w-full rounded-md border border-border bg-background px-3 text-xs outline-none focus:border-sale font-semibold"
+                    />
+                    <textarea
+                      rows={2}
+                      value={article.section_1_body || ""}
+                      onChange={(e) => onUpdate({ ...article, section_1_body: e.target.value })}
+                      placeholder="Whether dressing up for festive celebrations..."
+                      className="w-full rounded-md border border-border bg-background p-2.5 text-xs outline-none focus:border-sale leading-relaxed"
+                    />
+                  </div>
+
+                  {/* Section 2 */}
+                  <div className="rounded-lg border border-border/70 bg-card p-3.5 space-y-2">
+                    <label className="block text-xs font-bold text-foreground">
+                      {lang === "bn" ? "সেকশন ২ শিরোনাম ও টেক্সট" : "Section 2: Title & Content"}
+                    </label>
+                    <input
+                      type="text"
+                      value={article.section_2_title || ""}
+                      onChange={(e) => onUpdate({ ...article, section_2_title: e.target.value })}
+                      placeholder="Modern Everyday Styles: Hoodies, Tees, Denim & Footwear"
+                      className="h-9 w-full rounded-md border border-border bg-background px-3 text-xs outline-none focus:border-sale font-semibold"
+                    />
+                    <textarea
+                      rows={2}
+                      value={article.section_2_body || ""}
+                      onChange={(e) => onUpdate({ ...article, section_2_body: e.target.value })}
+                      placeholder="From cozy fleece-lined winter hoodies..."
+                      className="w-full rounded-md border border-border bg-background p-2.5 text-xs outline-none focus:border-sale leading-relaxed"
+                    />
+                  </div>
+
+                  {/* Section 3 */}
+                  <div className="rounded-lg border border-border/70 bg-card p-3.5 space-y-2">
+                    <label className="block text-xs font-bold text-foreground">
+                      {lang === "bn" ? "সেকশন ৩ শিরোনাম ও টেক্সট" : "Section 3: Title & Content"}
+                    </label>
+                    <input
+                      type="text"
+                      value={article.section_3_title || ""}
+                      onChange={(e) => onUpdate({ ...article, section_3_title: e.target.value })}
+                      placeholder="Transparent Shopping, Express Nationwide Delivery & Global Dispatch"
+                      className="h-9 w-full rounded-md border border-border bg-background px-3 text-xs outline-none focus:border-sale font-semibold"
+                    />
+                    <textarea
+                      rows={2}
+                      value={article.section_3_body || ""}
+                      onChange={(e) => onUpdate({ ...article, section_3_body: e.target.value })}
+                      placeholder="Enjoy seamless shopping with door-to-door Cash on Delivery (COD)..."
+                      className="w-full rounded-md border border-border bg-background p-2.5 text-xs outline-none focus:border-sale leading-relaxed"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeTabSub === "custom" && (
+                <div className="space-y-2 pt-1">
+                  <label className="block text-xs font-bold text-foreground">
+                    {lang === "bn" ? "কাস্টম প্যারাগ্রাফ বা টেক্সট কনটেন্ট (ঐচ্ছিক)" : "Custom Paragraph or Content (Optional Override)"}
+                  </label>
+                  <textarea
+                    rows={6}
+                    value={article.custom_content || ""}
+                    onChange={(e) => onUpdate({ ...article, custom_content: e.target.value })}
+                    placeholder="Enter custom paragraphs or text here..."
+                    className="w-full rounded-lg border border-border bg-background p-3 text-xs outline-none transition focus:border-sale leading-relaxed font-mono"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {lang === "bn"
+                      ? "এটি ফাঁকা রাখলে উপরের ৩টি সেকশন স্বয়ংক্রিয়ভাবে প্রদর্শিত হবে।"
+                      : "If left blank, the 3 structured sections above will be displayed automatically."}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Live Storefront Preview Box */}
+      {article.enabled !== false && (
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-sale" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {lang === "bn" ? "লাইভ স্টোরফ্রন্ট প্রিভিউ (রেসপন্সিভ)" : "Live Storefront Preview (Responsive)"}
+              </h3>
+            </div>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {lang === "bn" ? "হোমপেজের একদম নিচে যেভাবে দেখাবে" : "As rendered at the bottom of homepage"}
+            </span>
+          </div>
+
+          <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-b from-card via-card/90 to-muted/20 p-4 sm:p-6 shadow-xs">
+            {/* Header Badges */}
+            <div className="mb-2.5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-sale/10 px-3 py-1 text-xs font-semibold text-sale">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>{article.badge_label || "Online Fashion Guide"}</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span>{badgeTrustDisplay}</span>
+              </span>
+            </div>
+
+            {/* Heading */}
+            <h4 className="text-sm sm:text-base md:text-lg font-bold text-foreground leading-snug">
+              {article.title || "Faiza Zone — The Premier Online Fashion & Lifestyle Shopping Destination in Bangladesh"}
+            </h4>
+
+            {/* Preview Paragraph */}
+            <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              {article.preview_text || "Looking for authentic, trendsetting clothing with guaranteed fabric quality and affordable pricing?..."}{" "}
+              {!previewExpanded && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewExpanded(true)}
+                  className="font-semibold text-sale hover:underline ml-1 inline-flex items-center gap-0.5 text-xs sm:text-sm"
+                >
+                  {article.read_more_label || "Read More"} <ChevronDown className="h-3 w-3" />
+                </button>
+              )}
+            </p>
+
+            {/* Action Row */}
+            <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2.5">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
+                {previewExpanded
+                  ? "Showing complete shopping guide and product details"
+                  : "Click below to read full shopping guide & fashion details"}
+              </p>
+              <button
+                type="button"
+                onClick={() => setPreviewExpanded((p) => !p)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-sale/40 bg-sale/10 px-3 py-1.5 text-xs font-bold text-sale transition hover:bg-sale hover:text-white"
+              >
+                {previewExpanded ? (
+                  <>
+                    {article.show_less_label || "Show Less"} <ChevronUp className="h-3.5 w-3.5" />
+                  </>
+                ) : (
+                  <>
+                    {article.read_more_label || "Read More"} <ChevronDown className="h-3.5 w-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Collapsed content preview */}
+            {previewExpanded && (
+              <div className="mt-3.5 space-y-3 border-t border-border/60 pt-3 text-xs leading-relaxed text-muted-foreground">
+                {article.custom_content ? (
+                  <p className="whitespace-pre-line">{article.custom_content}</p>
+                ) : (
+                  <>
+                    <div>
+                      <h5 className="font-semibold text-foreground text-xs sm:text-sm">
+                        {article.section_1_title || "Curated Ethnic Wear: Elegant Kurtis, Panjabis & Festive Attire"}
+                      </h5>
+                      <p className="mt-0.5">
+                        {article.section_1_body || "Whether dressing up for festive celebrations, weddings, or everyday corporate elegance..."}
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-foreground text-xs sm:text-sm">
+                        {article.section_2_title || "Modern Everyday Styles: Hoodies, Tees, Denim & Footwear"}
+                      </h5>
+                      <p className="mt-0.5">
+                        {article.section_2_body || "From cozy fleece-lined winter hoodies and athletic joggers to heavyweight..."}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import {
   type MidBannerSectionConfig,
   type FaqItem,
   type FaqSectionConfig,
+  type SeoArticleSectionConfig,
 } from "./homepage-config-server";
 
 export {
@@ -31,6 +32,7 @@ export {
   type MidBannerSectionConfig,
   type FaqItem,
   type FaqSectionConfig,
+  type SeoArticleSectionConfig,
 };
 
 export async function fetchHomepageConfig(): Promise<HomepageConfig> {
